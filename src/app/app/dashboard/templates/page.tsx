@@ -45,6 +45,14 @@ type TemplatePreviewBaseData =
   | typeof initialResumeState
   | typeof initialResumeStateEn;
 
+/**
+ * 模板预览固定使用的示例头像与照片设置（来自示例简历「宋哈娜」）。
+ * 模板预览里的照片不参与用户自己的简历内容：无论「示例内容 / 我的真实内容」
+ * 开关选哪一项，头像都保持示例照片，只有文字内容跟随开关。
+ */
+const TEMPLATE_PREVIEW_PHOTO = initialResumeState.basic.photo;
+const TEMPLATE_PREVIEW_PHOTO_CONFIG = initialResumeState.basic.photoConfig;
+
 const buildTemplatePreviewData = (
   baseData: TemplatePreviewBaseData,
   template: ResumeTemplate,
@@ -65,6 +73,8 @@ const buildTemplatePreviewData = (
   basic: {
     ...baseData.basic,
     layout: template.basic.layout,
+    photo: TEMPLATE_PREVIEW_PHOTO,
+    photoConfig: TEMPLATE_PREVIEW_PHOTO_CONFIG,
   },
 } as any);
 
