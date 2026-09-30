@@ -1,7 +1,8 @@
 
 import React, { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { DEFAULT_TEMPLATES } from "@/config";
+import { findTemplateView } from "@/lib/templateCatalog";
+import { useCustomTemplateStore } from "@/store/useCustomTemplateStore";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useAutoOnePage } from "@/hooks/useAutoOnePage";
@@ -65,16 +66,15 @@ const PreviewPanel = React.forwardRef<HTMLDivElement, PreviewPanelProps>(
     ref
   ) => {
     const { activeResume, setActiveSection } = useResumeStore();
+    const customTemplates = useCustomTemplateStore((state) => state.templates);
     const selectedFontFamily = normalizeFontFamily(
       activeResume?.globalSettings?.fontFamily
     );
     const t = useTranslations("previewDock");
-    const template = useMemo(() => {
-      return (
-        DEFAULT_TEMPLATES.find((t) => t.id === activeResume?.templateId) ||
-        DEFAULT_TEMPLATES[0]
-      );
-    }, [activeResume?.templateId]);
+    const template = useMemo(
+      () => findTemplateView(activeResume?.templateId, customTemplates),
+      [activeResume?.templateId, customTemplates]
+    );
 
     const startRef = useRef<HTMLDivElement>(null);
     const previewRef = useRef<HTMLDivElement>(null);

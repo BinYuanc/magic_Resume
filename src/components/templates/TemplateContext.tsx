@@ -1,9 +1,11 @@
 import React, { createContext, useContext } from "react";
 import { MenuSection } from "@/types/resume";
+import type { TemplateSectionStyle } from "@/types/templateDefinition";
 
 interface TemplateContextProps {
   templateId: string;
   menuSections: MenuSection[];
+  sectionStyles?: Record<string, TemplateSectionStyle>;
 }
 
 const TemplateContext = createContext<TemplateContextProps | undefined>(undefined);
@@ -11,10 +13,11 @@ const TemplateContext = createContext<TemplateContextProps | undefined>(undefine
 export const TemplateProvider: React.FC<{
   templateId: string;
   menuSections: MenuSection[];
+  sectionStyles?: Record<string, TemplateSectionStyle>;
   children: React.ReactNode;
-}> = ({ templateId, menuSections, children }) => {
+}> = ({ templateId, menuSections, sectionStyles, children }) => {
   return (
-    <TemplateContext.Provider value={{ templateId, menuSections }}>
+    <TemplateContext.Provider value={{ templateId, menuSections, sectionStyles }}>
       {children}
     </TemplateContext.Provider>
   );

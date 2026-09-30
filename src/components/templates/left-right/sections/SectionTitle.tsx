@@ -18,7 +18,8 @@ const SectionTitle = ({ type, title, globalSettings, showTitle = true }: Section
         return menuSections.find((s) => s.id === type)?.title;
     }, [menuSections, type, title]);
 
-    const themeColor = globalSettings?.themeColor;
+    const sectionStyle = templateContext?.sectionStyles?.[type];
+    const themeColor = sectionStyle?.color ?? globalSettings?.themeColor;
     if (!showTitle) return null;
 
     return (
@@ -27,10 +28,12 @@ const SectionTitle = ({ type, title, globalSettings, showTitle = true }: Section
             <h3
                 className="pl-4 py-1 flex items-center relative font-bold"
                 style={{
-                    fontSize: `${globalSettings?.headerSize || 18}px`,
+                    fontSize: `${sectionStyle?.fontSize ?? globalSettings?.headerSize ?? 18}px`,
                     color: themeColor,
                     borderLeft: `3px solid ${themeColor}`,
-                    marginBottom: `${globalSettings?.paragraphSpacing}px`,
+                    marginBottom: `${sectionStyle?.itemSpacing ?? globalSettings?.paragraphSpacing ?? 0}px`,
+                fontWeight: sectionStyle?.fontWeight,
+                textAlign: sectionStyle?.align,
                 }}
             >
                 {renderTitle}

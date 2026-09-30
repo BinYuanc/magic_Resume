@@ -22,6 +22,12 @@
 .DS_Store
 *.pem
 
+# local tooling / scratch
+.playwright-cli/
+_startup.log
+.tmp-build/
+.verify/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

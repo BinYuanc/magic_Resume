@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { CalendarIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { useTranslations } from "@/i18n/compat/client";
+import TurndownService from "turndown";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -14,10 +15,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import RichTextEditor from "../shared/rich-editor/RichEditor";
-import AIPolishDialog from "../shared/ai/AIPolishDialog";
+import AIOptimizeDialog from "../shared/ai/AIOptimizeDialog";
 import { useAIConfiguration } from "@/hooks/useAIConfiguration";
+import type { AIOptimizeRequest, RichEditorAPI } from "@/types/ai-resume";
 import { UnifiedDateInput } from "../ui/unified-date-input";
 import { UnifiedDateRangeInput } from "../ui/unified-date-range-input";
+
+// turndown 实例，用于将字段 HTML 转换为 Markdown 发给 AI
+const turndownService = new TurndownService({
+  headingStyle: "atx",
+  bulletListMarker: "-",
+});
 
 interface FieldProps {
   label?: string;
@@ -43,7 +51,10 @@ const Field = ({
   const [yearInput, setYearInput] = useState("");
   const [displayMonth, setDisplayMonth] = useState<Date>(new Date());
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
-  const [showPolishDialog, setShowPolishDialog] = useState(false);
+  // AI 优化请求（含任务类型与选区快照），非空时打开优化弹窗
+  const [optimizeRequest, setOptimizeRequest] = useState<AIOptimizeRequest | null>(null);
+  // RichEditor 暴露的选区替换能力
+  const editorApiRef = useRef<RichEditorAPI | null>(null);
   const { checkConfiguration } = useAIConfiguration();
   const t = useTranslations();
 
@@ -178,20 +189,41 @@ const Field = ({
             content={value || ""}
             onChange={onChange}
             placeholder={placeholder}
-            onPolish={() => {
+            editorApiRef={editorApiRef}
+            onAIOptimize={(request) => {
               if (checkConfiguration()) {
-                setShowPolishDialog(true);
+                setOptimizeRequest(request);
               }
             }}
           />
         </div>
 
-        <AIPolishDialog
-          open={showPolishDialog}
-          onOpenChange={setShowPolishDialog}
-          content={value || ""}
-          onApply={(content) => {
-            onChange(content);
+        <AIOptimizeDialog
+          open={!!optimizeRequest}
+          onOpenChange={(open) => {
+            if (!open) setOptimizeRequest(null);
+          }}
+          task={optimizeRequest?.task ?? "polish"}
+          content={
+            optimizeRequest?.selection
+              ? optimizeRequest.selection.text
+              : turndownService.turndown(value || "")
+          }
+          selectionMode={!!optimizeRequest?.selection}
+          onApply={({ html, plainText }) => {
+            const selection = optimizeRequest?.selection;
+            // 选中文字模式：只替换选区范围，其他内容保持不变
+            if (selection && editorApiRef.current) {
+              editorApiRef.current.replaceSelection(
+                selection.from,
+                selection.to,
+                html,
+                plainText,
+              );
+            } else {
+              // 整段模式：替换整个字段内容
+              onChange(html);
+            }
           }}
         />
       </motion.div>

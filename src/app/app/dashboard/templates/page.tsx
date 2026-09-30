@@ -5,10 +5,20 @@ import { useRouter } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { DEFAULT_TEMPLATES } from "@/config";
 import { useResumeStore } from "@/store/useResumeStore";
+import { useCustomTemplateStore, makeUniqueTemplateId } from "@/store/useCustomTemplateStore";
+import { definitionToTemplateView, listTemplateViews } from "@/lib/templateCatalog";
+import { describeImportError, exportTemplateZip, importTemplateFile } from "@/lib/templateTransfer";
+import { getBuiltinDefinition } from "@/lib/templateResolver";
+import SaveAsTemplateDialog from "@/components/shared/templates/SaveAsTemplateDialog";
+import TemplateEditorDialog from "@/components/shared/templates/TemplateEditorDialog";
+import type { TemplateDefinition } from "@/types/templateDefinition";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Copy, Download, FileUp, Pencil, Save, Star, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import ResumeTemplateComponent from "@/components/templates";
 import { initialResumeState, initialResumeStateEn } from "@/config/initialResumeData";
 import type { ResumeTemplate } from "@/types/template";
@@ -208,9 +218,31 @@ const TemplatesPage = () => {
   const locale = useLocale();
   const router = useRouter();
   const createResume = useResumeStore((state) => state.createResume);
+  const activeResume = useResumeStore((state) => state.activeResume);
+  const customTemplates = useCustomTemplateStore((state) => state.templates);
+  const {
+    addTemplate: addCustomTemplate,
+    removeTemplate: removeCustomTemplate,
+    renameTemplate,
+    duplicateTemplate,
+  } = useCustomTemplateStore.getState();
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string>(PRESET_COLORS[0].value);
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** 内置模板 / 我的模板 */
+  const [tab, setTab] = useState<"builtin" | "mine">("builtin");
+  /** 模板预览用示例内容还是我的真实简历内容 */
+  const [contentSource, setContentSource] = useState<"sample" | "mine">("mine");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [renaming, setRenaming] = useState<TemplateDefinition | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  /** 保存当前排版为模板 */
+  const [saveAsOpen, setSaveAsOpen] = useState(false);
+  /** 模板编辑器（V1） */
+  const [editing, setEditing] = useState<TemplateDefinition | null>(null);
+
+  const myTemplates = customTemplates;
+  const allTemplateViews = listTemplateViews(myTemplates);
 
   useEffect(() => {
     let currentIndex = 0;
@@ -235,13 +267,21 @@ const TemplatesPage = () => {
     }
   };
 
-  const baseData = locale === "en" ? initialResumeStateEn : initialResumeState;
+  /**
+   * 预览数据源：优先展示用户自己的真实简历内容（第 29 节要求）。
+   * 没有简历时才退回内置示例数据，避免“永远只看宋哈娜”。
+   */
+  const sampleBaseData = locale === "en" ? initialResumeStateEn : initialResumeState;
+  const baseData: TemplatePreviewBaseData =
+    contentSource === "mine" && activeResume
+      ? (activeResume as unknown as TemplatePreviewBaseData)
+      : sampleBaseData;
+
   const activePreviewTemplate =
-    DEFAULT_TEMPLATES.find((template) => template.id === previewTemplate) ??
-    null;
+    allTemplateViews.find((template) => template.id === previewTemplate) ?? null;
 
   const handleCreateResume = (templateId: string) => {
-    const template = DEFAULT_TEMPLATES.find((entry) => entry.id === templateId);
+    const template = allTemplateViews.find((entry) => entry.id === templateId);
     if (!template) return;
 
     const resumeId = createResume(templateId);
@@ -267,10 +307,167 @@ const TemplatesPage = () => {
     router.push({ to: "/app/workbench/$id", params: { id: resumeId } });
   };
 
+  /** 导入自定义模板：解析 → Schema 校验 → 安全扫描 → ID 冲突自动改名 → 落库 */
+  const handleImportFile = async (file: File) => {
+    try {
+      const definition = await importTemplateFile(file);
+      if (allTemplateViews.some((item) => item.id === definition.id)) {
+        const newId = makeUniqueTemplateId(definition.id, allTemplateViews);
+        const suffix = newId.slice(newId.lastIndexOf("-") + 1);
+        // 名称同样受 60 字符限制：先去掉旧后缀再补新后缀，避免 "X (2) (2)" 且不越界
+        const baseName = definition.name.replace(/\s*\(\d+\)$/, "").trim();
+        definition.id = newId;
+        definition.name = `${baseName.slice(0, Math.max(1, 60 - suffix.length - 3))} (${suffix})`;
+        toast(t("import.conflictRenamed", { name: definition.name }));
+      }
+      addCustomTemplate(definition);
+      setTab("mine");
+      toast.success(t("import.success", { name: definition.name }));
+    } catch (error) {
+      toast.error(describeImportError(error));
+    }
+  };
+
+  /** 内置模板 → 我的模板（只复制展示规则，之后可在编辑器里改字号/间距/颜色） */
+  const handleDuplicateBuiltin = (templateId: string) => {
+    const definition = getBuiltinDefinition(templateId);
+    if (!definition) return;
+    const newId = makeUniqueTemplateId(`${templateId}-custom`, customTemplates);
+    const copy: TemplateDefinition = {
+      ...definition,
+      id: newId,
+      name: `${definition.name}（我的）`,
+      source: "custom-schema",
+      builtinLayout: undefined,
+      previewImage: undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    addCustomTemplate(copy);
+    setTab("mine");
+    toast.success(t("myTemplates.duplicated", { name: copy.name }));
+  };
+
+  const handleDuplicate = (id: string) => {
+    const source = myTemplates.find((item) => item.id === id);
+    if (!source) return;
+    const newId = makeUniqueTemplateId(`${source.id}-copy`, myTemplates);
+    duplicateTemplate(id, newId, `${source.name} 副本`);
+    toast.success(t("myTemplates.duplicated", { name: `${source.name} 副本` }));
+  };
+
+  const handleExport = async (definition: TemplateDefinition) => {
+    try {
+      await exportTemplateZip(definition);
+      toast.success(t("myTemplates.exported", { name: definition.name }));
+    } catch (error) {
+      toast.error(describeImportError(error));
+    }
+  };
+
+  const handleDelete = (definition: TemplateDefinition) => {
+    removeCustomTemplate(definition.id);
+    toast.success(t("myTemplates.deleted", { name: definition.name }));
+  };
+
+  const submitRename = () => {
+    if (!renaming || !renameValue.trim()) return;
+    renameTemplate(renaming.id, renameValue.trim().slice(0, 60));
+    toast.success(t("myTemplates.renamed"));
+    setRenaming(null);
+  };
+
   return (
     <ScrollArea className="h-[calc(100vh-2rem)] w-full">
       <div className="w-full max-w-[1600px] mx-auto py-8 px-4 sm:px-6">
         <div className="flex flex-col space-y-8">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 rounded-full border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 p-1">
+                <button
+                  type="button"
+                  onClick={() => setTab("builtin")}
+                  className={cn(
+                    "px-4 py-1.5 text-sm rounded-full transition-colors",
+                    tab === "builtin"
+                      ? "bg-white dark:bg-neutral-800 shadow-sm font-medium"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {t("tabs.builtin")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTab("mine")}
+                  className={cn(
+                    "px-4 py-1.5 text-sm rounded-full transition-colors",
+                    tab === "mine"
+                      ? "bg-white dark:bg-neutral-800 shadow-sm font-medium"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {t("tabs.mine")}
+                  {myTemplates.length > 0 ? (
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      {myTemplates.length}
+                    </span>
+                  ) : null}
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <button
+                    type="button"
+                    onClick={() => setContentSource("sample")}
+                    className={cn(
+                      "px-2 py-1 rounded-md transition-colors",
+                      contentSource === "sample" ? "bg-muted font-medium" : "hover:bg-muted/60"
+                    )}
+                  >
+                    {t("contentSource.sample")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setContentSource("mine")}
+                    className={cn(
+                      "px-2 py-1 rounded-md transition-colors",
+                      contentSource === "mine" ? "bg-muted font-medium" : "hover:bg-muted/60"
+                    )}
+                  >
+                    {t("contentSource.mine")}
+                  </button>
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".zip,.json,application/zip,application/json"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void handleImportFile(file);
+                    event.target.value = "";
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSaveAsOpen(true)}
+                  disabled={!activeResume}
+                  title={activeResume ? undefined : t("saveAsTemplate.noResume")}
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {t("saveAsTemplate.button")}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                  <FileUp className="mr-2 h-4 w-4" />
+                  {t("import.button")}
+                </Button>
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h2 className="text-3xl font-bold tracking-tight">{t("title")}</h2>
 
@@ -305,26 +502,178 @@ const TemplatesPage = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
-            {DEFAULT_TEMPLATES.map((template, index) => {
-              const templateKey = getTemplateKey(template.id);
-              return (
-                <TemplateCardItem
-                  key={template.id}
-                  index={index}
-                  template={template}
-                  templateName={t(`${templateKey}.name`)}
-                  templateDescription={t(`${templateKey}.description`)}
-                  baseData={baseData}
-                  selectedColor={selectedColor}
-                  onPreview={() => setPreviewTemplate(template.id)}
-                  onUseTemplate={() => handleCreateResume(template.id)}
-                  previewLabel={t("preview")}
-                  useTemplateLabel={t("useTemplate")}
-                />
-              );
-            })}
-          </div>
+          {tab === "builtin" ? (
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
+              {DEFAULT_TEMPLATES.map((template, index) => {
+                const templateKey = getTemplateKey(template.id);
+                return (
+                  <div key={template.id} className="flex flex-col gap-2">
+                    <TemplateCardItem
+                      index={index}
+                      template={template}
+                      templateName={t(`${templateKey}.name`)}
+                      templateDescription={t(`${templateKey}.description`)}
+                      baseData={baseData}
+                      selectedColor={selectedColor}
+                      onPreview={() => setPreviewTemplate(template.id)}
+                      onUseTemplate={() => handleCreateResume(template.id)}
+                      previewLabel={t("preview")}
+                      useTemplateLabel={t("useTemplate")}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-muted-foreground"
+                      title={t("myTemplates.duplicateBuiltin")}
+                      onClick={() => handleDuplicateBuiltin(template.id)}
+                    >
+                      <Copy className="mr-1 h-3.5 w-3.5" />
+                      {t("myTemplates.duplicateBuiltin")}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {myTemplates.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+                  <p>{t("myTemplates.empty")}</p>
+                  <div className="mt-4 flex justify-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSaveAsOpen(true)}
+                      disabled={!activeResume}
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      {t("saveAsTemplate.button")}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                      <FileUp className="mr-2 h-4 w-4" />
+                      {t("import.button")}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
+                  {myTemplates.map((definition, index) => {
+                    const view = definitionToTemplateView(definition);
+                    return (
+                      <div key={definition.id} className="flex flex-col gap-2">
+                        <TemplateCardItem
+                          index={index}
+                          template={view}
+                          templateName={definition.name}
+                          templateDescription={definition.description || t("myTemplates.custom")}
+                          baseData={baseData}
+                          selectedColor={selectedColor}
+                          onPreview={() => setPreviewTemplate(definition.id)}
+                          onUseTemplate={() => handleCreateResume(definition.id)}
+                          previewLabel={t("preview")}
+                          useTemplateLabel={t("useTemplate")}
+                        />
+                        <div className="flex items-center justify-between gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title={t("editor.button")}
+                            onClick={() => setEditing(definition)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title={t("myTemplates.rename")}
+                            onClick={() => {
+                              setRenaming(definition);
+                              setRenameValue(definition.name);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title={t("myTemplates.duplicate")}
+                            onClick={() => handleDuplicate(definition.id)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title={t("myTemplates.export")}
+                            onClick={() => void handleExport(definition)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title={t("myTemplates.delete")}
+                            onClick={() => handleDelete(definition)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                          <Star className="h-3 w-3" />
+                          <span className="truncate">
+                            {definition.layout.layout === "two-column"
+                              ? t("myTemplates.twoColumn")
+                              : t("myTemplates.singleColumn")}
+                          </span>
+                          <span>·</span>
+                          <span>{definition.docxCapability === "full" ? "DOCX OK" : "DOCX basic"}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          <SaveAsTemplateDialog
+            open={saveAsOpen}
+            onOpenChange={setSaveAsOpen}
+            onSaved={(templateId) => {
+              setTab("mine");
+              void templateId;
+            }}
+          />
+
+          <TemplateEditorDialog
+            definition={editing}
+            open={Boolean(editing)}
+            onOpenChange={(open) => {
+              if (!open) setEditing(null);
+            }}
+          />
+
+          <Dialog open={!!renaming} onOpenChange={(open) => !open && setRenaming(null)}>
+            <DialogContent className="sm:max-w-sm">
+              <DialogTitle>{t("myTemplates.rename")}</DialogTitle>
+              <Input
+                value={renameValue}
+                maxLength={60}
+                onChange={(event) => setRenameValue(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") submitRename();
+                }}
+              />
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => setRenaming(null)}>
+                  {t("switchTemplateDialog.cancel")}
+                </Button>
+                <Button size="sm" onClick={submitRename}>
+                  {t("myTemplates.renameConfirm")}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <Dialog
             open={!!previewTemplate}

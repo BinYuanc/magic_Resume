@@ -2,6 +2,7 @@ import TurndownService from "turndown";
 import { DEFAULT_FIELD_ORDER } from "@/config";
 import { getCustomFieldDisplayText, getCustomFieldHref, shouldShowCustomFieldLabelPrefix } from "@/lib/customField";
 import { getProjectLinkMeta } from "@/lib/projectLink";
+import { canonicalSectionId, isResumeSectionEnabled } from "@/lib/resumePresentation";
 import { BasicFieldType, BasicInfo, CustomItem, MenuSection, ResumeData } from "@/types/resume";
 
 const HTML_TAG_REGEX = /<\/?[a-z][\s\S]*>/i;
@@ -89,7 +90,8 @@ const pickBasicFieldValue = (
 
 const getOrderedEnabledSections = (resume: ResumeData): MenuSection[] => {
   const enabledSections = (resume.menuSections || [])
-    .filter((section) => section.enabled)
+    // 与 Web / PDF / DOCX 同一套启用规则：菜单 enabled + styleOverrides.sections[].hidden
+    .filter((section) => section.enabled && isResumeSectionEnabled(resume, canonicalSectionId(section.id)))
     .sort((a, b) => a.order - b.order);
 
   if (enabledSections.length > 0) return enabledSections;

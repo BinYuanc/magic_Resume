@@ -18,7 +18,8 @@ import { getConfig, getFileHandle } from "@/utils/fileSystem";
 import { preloadFontFamily } from "@/utils/fonts";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useAIConfigStore } from "@/store/useAIConfigStore";
-import { DEFAULT_TEMPLATES } from "@/config";
+import { findTemplateView } from "@/lib/templateCatalog";
+import { useCustomTemplateStore } from "@/store/useCustomTemplateStore";
 import { CreateResumeModal } from "./CreateResumeModal";
 import { ImportResumeDialog } from "./ImportResumeDialog";
 import { ResumeCardItem } from "./ResumeCardItem";
@@ -47,6 +48,7 @@ export const ResumeWorkbench = () => {
         deleteResume,
         createResume,
     } = useResumeStore();
+    const customTemplates = useCustomTemplateStore((state) => state.templates);
     const aiConfig = useAIConfigStore();
     const pdfConnection = getTaskModel(aiConfig, "pdf");
     const [pendingPdfResume, setPendingPdfResume] = useState<ReturnType<typeof createResumeFromAIResult> | null>(null);
@@ -121,7 +123,7 @@ export const ResumeWorkbench = () => {
         const newId = createResume(templateId, isBlank);
 
         if (templateId) {
-            const template = DEFAULT_TEMPLATES.find((t) => t.id === templateId);
+            const template = findTemplateView(templateId, customTemplates);
             if (template) {
                 const { resumes, updateResume } = useResumeStore.getState();
                 const resume = resumes[newId];

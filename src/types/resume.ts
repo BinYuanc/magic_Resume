@@ -108,6 +108,18 @@ export interface Skill {
   level: number;
 }
 
+/**
+ * 通用文本样式（三级样式体系的「局部样式」层）
+ * 所有字段均可选：不存在时沿「局部 → 模块 → globalSettings → 模板默认」链向上继承。
+ */
+export interface ResumeTextStyle {
+  fontSize?: number;      // 局部字号（px），不存在时继承上级样式
+  color?: string;         // 文字颜色，不存在时继承上级样式
+  bold?: boolean;         // 是否加粗
+  italic?: boolean;       // 是否斜体
+  underline?: boolean;    // 是否下划线
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -115,6 +127,8 @@ export interface Project {
   date: string;
   description: string;
   visible: boolean;
+  nameStyle?: ResumeTextStyle; // 项目名称局部样式（缺失时继承 globalSettings.subheaderSize）
+  roleStyle?: ResumeTextStyle; // 项目角色局部样式（缺失时继承 globalSettings.subheaderSize）
   link?: string;
   linkLabel?: string;
 }
@@ -123,6 +137,22 @@ export interface Certificate {
   id: string;
   url: string; // Base64 encoding for the image or direct URL
   width: number; // Width percentage to support flex layouts
+}
+
+/**
+ * 模块级样式配置（三级样式体系的「模块样式」层接口）
+ * 本次仅接入 projects.itemSpacing，其余字段为第二阶段预留。
+ */
+export interface SectionStyles {
+  projects?: {
+    itemSpacing?: number; // 项目条目之间的间距（px），缺失时回退 paragraphSpacing
+  };
+  experience?: {
+    itemSpacing?: number; // 工作经历条目间距（预留）
+  };
+  education?: {
+    itemSpacing?: number; // 教育经历条目间距（预留）
+  };
 }
 
 export type GlobalSettings = {
@@ -135,6 +165,7 @@ export type GlobalSettings = {
   sectionSpacing?: number | undefined;
   headerSize?: number | undefined;
   subheaderSize?: number | undefined;
+  sectionStyles?: SectionStyles | undefined; // 模块级样式（局部 → 模块 → 全局）
   useIconMode?: boolean | undefined;
   centerSubtitle?: boolean | undefined;
   flexibleHeaderLayout?: boolean | undefined;
@@ -180,6 +211,12 @@ export interface MenuSection {
   order: number;
 }
 
+/**
+ * ResumeStyleOverrides 单独维护「用户主动的排版调整」。
+ * 注意：它不是简历内容，切模板时可以整体保留或整体清除，删除它不会丢失任何经历文字。
+ */
+import type { ResumeStyleOverrides } from "./styleOverride";
+
 export interface ResumeData {
   id: string;
   title: string;
@@ -198,6 +235,8 @@ export interface ResumeData {
   draggingProjectId: string | null;
   menuSections: MenuSection[];
   globalSettings: GlobalSettings;
+  /** 用户排版覆盖层（可选，旧简历没有此字段时视为「完全使用模板默认」） */
+  styleOverrides?: ResumeStyleOverrides;
 }
 
 export interface ResumeStore {

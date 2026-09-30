@@ -38,7 +38,7 @@ const CreativeTemplate: React.FC<CreativeTemplateProps> = ({ data, template }) =
                 return <ProjectSection projects={data.projects} globalSettings={data.globalSettings} />;
             case "certificates":
                 return (
-                    <SectionWrapper sectionId="certificates" style={{ marginTop: `${data.globalSettings?.sectionSpacing || 24}px` }}>
+                    <SectionWrapper sectionId="certificates" style={{ marginTop: `${data.globalSettings?.sectionSpacing ?? 24}px` }}>
                         <SectionTitle type="certificates" globalSettings={data.globalSettings} />
                         <CertificatesSection certificates={data.certificates} />
                     </SectionWrapper>

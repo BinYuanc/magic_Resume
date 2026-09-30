@@ -20,7 +20,8 @@ const SectionTitle = ({ type, title, globalSettings, showTitle = true, variant =
         return menuSections.find((s) => s.id === type)?.title;
     }, [menuSections, type, title]);
 
-    const themeColor = globalSettings?.themeColor;
+    const sectionStyle = templateContext?.sectionStyles?.[type];
+    const themeColor = sectionStyle?.color ?? globalSettings?.themeColor;
     if (!showTitle) return null;
 
     const isSidebar = variant === "sidebar";
@@ -32,7 +33,7 @@ const SectionTitle = ({ type, title, globalSettings, showTitle = true, variant =
                 isSidebar ? "border-b border-white/20" : "border-b"
             )}
             style={{
-                fontSize: `${isSidebar ? (globalSettings?.headerSize || 18) - 2 : (globalSettings?.headerSize || 18)}px`,
+                fontSize: `${isSidebar ? (globalSettings?.headerSize ?? 18) - 2 : (globalSettings?.headerSize ?? 18)}px`,
                 fontWeight: "bold",
                 color: isSidebar ? "#ffffff" : themeColor,
                 borderColor: isSidebar ? "rgba(255,255,255,0.2)" : themeColor,

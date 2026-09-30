@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useResumeStore } from "@/store/useResumeStore";
 import { cn } from "@/lib/utils";
+import { useTemplateContext } from "../TemplateContext";
 
 interface SectionWrapperProps {
     sectionId: string;
@@ -20,6 +21,7 @@ const SectionWrapper: React.FC<SectionWrapperProps> = ({
     style,
 }) => {
     const { setActiveSection } = useResumeStore();
+    const sectionStyle = useTemplateContext()?.sectionStyles?.[sectionId];
 
     return (
         <motion.div
@@ -29,7 +31,7 @@ const SectionWrapper: React.FC<SectionWrapperProps> = ({
                 "hover:bg-[#f9f8f3]",
                 className
             )}
-            style={style}
+            style={{ ...style, ...(sectionStyle?.spacing !== undefined ? { marginTop: sectionStyle.spacing } : {}), background: sectionStyle?.background }}
             onClick={() => setActiveSection(sectionId)}
         >
             {children}

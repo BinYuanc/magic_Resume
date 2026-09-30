@@ -20,10 +20,10 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experiences, glob
     const themeColor = globalSettings?.themeColor || "#E31C24";
 
     return (
-        <SectionWrapper sectionId="experience" style={{ marginTop: `${globalSettings?.sectionSpacing || 24}px` }}>
+        <SectionWrapper sectionId="experience" style={{ marginTop: `${globalSettings?.sectionSpacing ?? 24}px` }}>
             <SectionTitle type="experience" globalSettings={globalSettings} showTitle={showTitle} />
             <AnimatePresence mode="popLayout">
-                <div className="flex flex-col gap-6" style={{ marginTop: `${globalSettings?.paragraphSpacing || 16}px` }}>
+                <div className="flex flex-col gap-6" style={{ marginTop: `${(globalSettings?.sectionStyles?.experience?.itemSpacing ?? globalSettings?.paragraphSpacing) ?? 16}px` }}>
                     {visibleExperiences?.map((exp) => (
                         <motion.div key={exp.id} layout="position" className="group">
                             {/* 不对称网格对齐头部 */}
@@ -31,14 +31,14 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experiences, glob
                                 <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
                                     <h4 
                                         className="font-extrabold text-slate-800 tracking-tight"
-                                        style={{ fontSize: `${globalSettings?.subheaderSize || 16}px` }}
+                                        style={{ fontSize: `${globalSettings?.subheaderSize ?? 16}px` }}
                                     >
                                         {exp.company}
                                     </h4>
                                     {centerSubtitle && (
                                         <span 
                                             className="font-medium text-slate-500 border-l border-slate-300 pl-3 text-[14px]"
-                                            style={{ fontSize: `${(globalSettings?.subheaderSize || 16) - 1}px` }}
+                                            style={{ fontSize: `${(globalSettings?.subheaderSize ?? 16) - 1}px` }}
                                         >
                                             {exp.position}
                                         </span>
@@ -55,7 +55,7 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experiences, glob
                             {exp.position && !centerSubtitle && (
                                 <div 
                                     className="font-semibold text-slate-500 mt-1 uppercase tracking-wider"
-                                    style={{ fontSize: `${(globalSettings?.subheaderSize || 16) - 2}px` }}
+                                    style={{ fontSize: `${(globalSettings?.subheaderSize ?? 16) - 2}px` }}
                                 >
                                     {exp.position}
                                 </div>
@@ -72,8 +72,8 @@ const ExperienceSection: React.FC<ExperienceSectionProps> = ({ experiences, glob
                                         className="text-slate-600 prose prose-sm max-w-none prose-p:my-1 [&>ul]:pl-4 [&>ul]:mt-1 [&>ul>li]:my-0.5 marker:text-slate-400"
                                         dangerouslySetInnerHTML={{ __html: normalizeRichTextContent(exp.details) }}
                                         style={{ 
-                                            fontSize: `${globalSettings?.baseFontSize || 13}px`, 
-                                            lineHeight: globalSettings?.lineHeight || 1.6 
+                                            fontSize: `${globalSettings?.baseFontSize ?? 13}px`, 
+                                            lineHeight: globalSettings?.lineHeight ?? 1.6 
                                         }}
                                     />
                                 </motion.div>

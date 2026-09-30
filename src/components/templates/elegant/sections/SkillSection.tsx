@@ -12,11 +12,11 @@ interface SkillSectionProps {
 
 const SkillSection = ({ skill, globalSettings, showTitle = true }: SkillSectionProps) => {
     return (
-        <SectionWrapper sectionId="skills" style={{ marginTop: `${globalSettings?.sectionSpacing || 24}px` }}>
+        <SectionWrapper sectionId="skills" style={{ marginTop: `${globalSettings?.sectionSpacing ?? 24}px` }}>
             <SectionTitle type="skills" globalSettings={globalSettings} showTitle={showTitle} />
             <motion.div style={{ marginTop: `${globalSettings?.paragraphSpacing}px` }}>
                 <motion.div className="text-baseFont" layout="position"
-                    style={{ fontSize: `${globalSettings?.baseFontSize || 14}px`, lineHeight: globalSettings?.lineHeight || 1.6 }}
+                    style={{ fontSize: `${globalSettings?.baseFontSize ?? 14}px`, lineHeight: globalSettings?.lineHeight ?? 1.6 }}
                     dangerouslySetInnerHTML={{ __html: normalizeRichTextContent(skill) }}
                 />
             </motion.div>

@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { ImageIcon, Layout, PanelsLeftBottom } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTranslations, useLocale } from "@/i18n/compat/client";
@@ -9,18 +10,29 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet-no-overlay";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { DEFAULT_TEMPLATES } from "@/config";
+import { findTemplateView, isCustomTemplateId, listTemplateViews } from "@/lib/templateCatalog";
 import { useResumeStore } from "@/store/useResumeStore";
+import { useCustomTemplateStore } from "@/store/useCustomTemplateStore";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTemplateSnapshots } from "@/hooks/useTemplateSnapshots";
 
-type TemplateItem = (typeof DEFAULT_TEMPLATES)[number];
+type TemplateItem = ReturnType<typeof listTemplateViews>[number];
 
 interface TemplatePreviewProps {
   template: TemplateItem;
   isActive: boolean;
   snapshotSrc: string | null;
+  previewImage?: string;
   onSelect: (templateId: string) => void;
 }
 
@@ -28,6 +40,7 @@ const TemplatePreview = ({
   template,
   isActive,
   snapshotSrc,
+  previewImage,
   onSelect,
 }: TemplatePreviewProps) => {
   return (
@@ -41,9 +54,9 @@ const TemplatePreview = ({
       )}
     >
       <div className="relative aspect-[210/297] w-full overflow-hidden bg-gray-50 dark:bg-gray-900">
-        {snapshotSrc ? (
+        {snapshotSrc || previewImage ? (
           <img
-            src={snapshotSrc}
+            src={snapshotSrc || previewImage}
             alt={template.name}
             className="h-full w-full object-cover object-top"
             loading="eager"
@@ -57,6 +70,9 @@ const TemplatePreview = ({
             </span>
           </div>
         )}
+      </div>
+      <div className="px-2 py-1 text-xs text-gray-600 dark:text-neutral-300 truncate">
+        {template.name}
       </div>
       {isActive && (
         <motion.div
@@ -74,11 +90,32 @@ const TemplateSheet = () => {
   const t = useTranslations("templates");
   const locale = useLocale();
   const { activeResume, setTemplate } = useResumeStore();
+  const customTemplates = useCustomTemplateStore((state) => state.templates);
   const { snapshotMap } = useTemplateSnapshots(locale);
 
-  const currentTemplate =
-    DEFAULT_TEMPLATES.find((template) => template.id === activeResume?.templateId) ||
-    DEFAULT_TEMPLATES[0];
+  const allTemplates = listTemplateViews(customTemplates);
+  const currentTemplate = findTemplateView(activeResume?.templateId, customTemplates);
+
+  /** 待切换目标 + 排版处理策略 */
+  const [pending, setPending] = useState<{
+    templateId: string;
+    templateName: string;
+  } | null>(null);
+  const [preserveOverrides, setPreserveOverrides] = useState(false);
+
+  const handleSelect = (templateId: string) => {
+    const template = allTemplates.find((item) => item.id === templateId);
+    if (!template || template.id === currentTemplate.id) return;
+    setPreserveOverrides(false);
+    setPending({ templateId, templateName: template.name });
+  };
+
+  const confirmSwitch = () => {
+    if (!pending) return;
+    // preserveOverrides=true → 只改 templateId；false → 重置展示层，但 ResumeData 内容始终不变
+    setTemplate(pending.templateId, { preserveOverrides });
+    setPending(null);
+  };
 
   return (
     <Sheet>
@@ -94,19 +131,82 @@ const TemplateSheet = () => {
         <div className="mt-4 h-[calc(100vh-8rem)]">
           <ScrollArea className="h-full w-full pr-4">
             <div className="grid grid-cols-4 gap-4 pb-8">
-              {DEFAULT_TEMPLATES.map((template) => (
+              {allTemplates.map((template) => (
                 <TemplatePreview
                   key={template.id}
                   template={template}
                   isActive={template.id === currentTemplate.id}
-                  snapshotSrc={snapshotMap[template.id]}
-                  onSelect={setTemplate}
+                  snapshotSrc={snapshotMap[template.id] ?? null}
+                  previewImage={
+                    isCustomTemplateId(template.id, customTemplates)
+                      ? customTemplates.find((item) => item.id === template.id)?.previewImage
+                      : undefined
+                  }
+                  onSelect={handleSelect}
                 />
               ))}
             </div>
           </ScrollArea>
         </div>
       </SheetContent>
+
+      <Dialog open={Boolean(pending)} onOpenChange={(open) => !open && setPending(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("switchTemplateDialog.title")}</DialogTitle>
+            <DialogDescription>
+              {t("switchTemplateDialog.description", {
+                template: pending?.templateName ?? "",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 hover:bg-muted/40">
+              <input
+                type="radio"
+                name="template-switch-mode"
+                className="mt-1"
+                checked={!preserveOverrides}
+                onChange={() => setPreserveOverrides(false)}
+              />
+              <span>
+                <span className="block text-sm font-medium">
+                  {t("switchTemplateDialog.useTemplateDefault")}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  {t("switchTemplateDialog.useTemplateDefaultHint")}
+                </span>
+              </span>
+            </label>
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 hover:bg-muted/40">
+              <input
+                type="radio"
+                name="template-switch-mode"
+                className="mt-1"
+                checked={preserveOverrides}
+                onChange={() => setPreserveOverrides(true)}
+              />
+              <span>
+                <span className="block text-sm font-medium">
+                  {t("switchTemplateDialog.keepOverrides")}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  {t("switchTemplateDialog.keepOverridesHint")}
+                </span>
+              </span>
+            </label>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPending(null)}>
+              {t("switchTemplateDialog.cancel")}
+            </Button>
+            <Button onClick={confirmSwitch}>{t("switchTemplateDialog.confirm")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 };

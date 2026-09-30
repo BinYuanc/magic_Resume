@@ -87,7 +87,7 @@ const BaseInfo = ({ basic = {} as BasicInfo, globalSettings, template }: BaseInf
                     </div>
                 </div>
                 <motion.div layout="position" className={styles.fields}
-                    style={{ fontSize: `${globalSettings?.baseFontSize || 14}px`, lineHeight: 1.5, color: "#fff" }}>
+                    style={{ fontSize: `${globalSettings?.baseFontSize ?? 14}px`, lineHeight: 1.5, color: "#fff" }}>
                     {allFields.map((item) => {
                         const customFieldHref = item.custom && "href" in item && typeof item.href === "string" ? item.href : null;
 

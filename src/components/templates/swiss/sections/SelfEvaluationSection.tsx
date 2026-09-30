@@ -14,9 +14,9 @@ const SelfEvaluationSection = ({ content, globalSettings, showTitle = true }: Se
     const themeColor = globalSettings?.themeColor || "#E31C24";
 
     return (
-        <SectionWrapper sectionId="selfEvaluation" style={{ marginTop: `${globalSettings?.sectionSpacing || 24}px` }}>
+        <SectionWrapper sectionId="selfEvaluation" style={{ marginTop: `${globalSettings?.sectionSpacing ?? 24}px` }}>
             <SectionTitle type="selfEvaluation" globalSettings={globalSettings} showTitle={showTitle} />
-            <motion.div style={{ marginTop: `${globalSettings?.paragraphSpacing || 16}px` }}>
+            <motion.div style={{ marginTop: `${globalSettings?.paragraphSpacing ?? 16}px` }}>
                 <motion.div 
                     layout="position"
                     className="relative pl-5 py-2 text-slate-600 prose prose-sm max-w-none prose-p:my-1 [&>ul]:pl-4 [&>ul]:mt-1 [&>ul>li]:my-0.5 marker:text-slate-400 bg-slate-50/30 rounded-r-xl"
@@ -28,8 +28,8 @@ const SelfEvaluationSection = ({ content, globalSettings, showTitle = true }: Se
                     />
                     <div
                         style={{ 
-                            fontSize: `${globalSettings?.baseFontSize || 13}px`, 
-                            lineHeight: globalSettings?.lineHeight || 1.6 
+                            fontSize: `${globalSettings?.baseFontSize ?? 13}px`, 
+                            lineHeight: globalSettings?.lineHeight ?? 1.6 
                         }}
                         dangerouslySetInnerHTML={{ __html: normalizeRichTextContent(content) }}
                     />

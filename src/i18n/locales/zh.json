@@ -421,6 +421,123 @@
       "swiss": {
         "name": "瑞士美学",
         "description": "极具艺术感的包豪斯国际排版，超粗字重对比与几何色块点缀，彰显理性与高级"
+      },
+      "tabs": {
+        "builtin": "内置模板",
+        "mine": "我的模板"
+      },
+      "contentSource": {
+        "sample": "示例内容",
+        "mine": "我的内容"
+      },
+      "import": {
+        "button": "导入自定义模板",
+        "success": "已导入模板：{name}",
+        "conflictRenamed": "模板 ID 已存在，已自动重命名为 {name}"
+      },
+      "myTemplates": {
+        "empty": "还没有自定义模板，导入一个 .zip 模板包开始使用",
+        "custom": "自定义 Schema 模板",
+        "rename": "重命名",
+        "renameConfirm": "保存",
+        "renamed": "已重命名",
+        "duplicate": "复制为我的模板",
+        "duplicated": "已复制：{name}",
+        "export": "导出模板",
+        "exported": "已导出：{name}",
+        "delete": "删除模板",
+        "deleted": "已删除：{name}",
+        "singleColumn": "单栏",
+        "twoColumn": "双栏",
+        "duplicateBuiltin": "复制为我的模板"
+      },
+      "saveAsTemplate": {
+        "button": "保存当前排版为模板",
+        "noResume": "还没有打开中的简历，先去创建一份再保存排版",
+        "title": "保存当前排版为模板",
+        "description": "只保存布局、字号、颜色和间距，不保存任何简历内容",
+        "name": "模板名称",
+        "namePlaceholder": "例如：AI 工程师定制排版",
+        "nameRequired": "请填写模板名称",
+        "descriptionField": "模板说明",
+        "descriptionPlaceholder": "适用于什么岗位 / 风格（可选）",
+        "category": "分类",
+        "categories": {
+          "professional": "专业",
+          "technology": "技术",
+          "simple": "简约",
+          "creative": "创意",
+          "ats": "ATS"
+        },
+        "tags": "标签",
+        "tagsPlaceholder": "逗号分隔，如：AI, 单栏",
+        "includeColors": "包含当前主题色",
+        "includeFonts": "包含当前字号",
+        "includeSpacing": "包含当前间距",
+        "privacyNote": "模板只保存展示规则；姓名、经历、项目等内容不会被保存。",
+        "cancel": "取消",
+        "save": "保存为模板",
+        "success": "已保存为模板：{name}",
+        "leakBlocked": "保存被阻止：{detail}",
+        "noResumeShort": "暂无简历"
+      },
+      "editor": {
+        "button": "编辑模板",
+        "title": "编辑模板：{name}",
+        "description": "调整布局、顺序、字体、间距和颜色，保存后立即生效",
+        "layout": {
+          "title": "页面布局",
+          "single": "单栏",
+          "two": "双栏",
+          "main": "主栏",
+          "side": "侧栏",
+          "mainWeight": "主栏宽度权重",
+          "sideWeight": "侧栏宽度权重"
+        },
+        "order": {
+          "title": "模块顺序",
+          "up": "上移",
+          "down": "下移",
+          "fixed": "固定在顶部"
+        },
+        "sections": {
+          "basic": "基本信息",
+          "summary": "自我评价",
+          "skills": "专业技能",
+          "experience": "工作经历",
+          "projects": "项目经历",
+          "education": "教育经历",
+          "certificates": "证书",
+          "custom": "自定义模块"
+        },
+        "typography": {
+          "title": "字体与字号",
+          "fontFamily": "字体",
+          "baseFontSize": "正文字号 (px)",
+          "headerSize": "一级标题字号 (px)",
+          "subheaderSize": "二级标题字号 (px)",
+          "lineHeight": "行高"
+        },
+        "spacing": {
+          "title": "间距",
+          "pagePadding": "页面边距",
+          "sectionGap": "模块间距",
+          "itemGap": "条目间距"
+        },
+        "colors": {
+          "title": "颜色",
+          "primary": "主题色",
+          "text": "正文颜色"
+        },
+        "sectionHeader": {
+          "title": "模块标题样式",
+          "border": "标题下分隔线"
+        },
+        "privacyNote": "编辑器只修改展示规则，简历内容不受影响。",
+        "cancel": "取消",
+        "save": "保存",
+        "saved": "模板已保存",
+        "leakBlocked": "保存被阻止：{detail}"
       }
     }
   },
@@ -434,7 +551,8 @@
       "printDesc": "调用系统打印工具另存为 PDF，当主渲染拥堵或需手动干预边距时的备用方案。",
       "jsonDesc": "保存您的配置档案副本。日后更换设备或清理缓存后，可使用此文件一键无损导入恢复进度。",
       "markdownDesc": "转换为极简的文本标记语言文件，方便快速粘贴给各种 AI 模型或是其他文本编辑器。",
-      "privacyNotice": "魔方简历承诺绝不收集、上传或存储您的任何简历数据，您的隐私完全受到保护。"
+      "privacyNotice": "魔方简历承诺绝不收集、上传或存储您的任何简历数据，您的隐私完全受到保护。",
+      "docxDesc": "导出可编辑 DOCX，保留文本结构、字号、颜色、粗体、列表、链接及基础版式。复杂视觉模板可能使用简化布局。"
     },
     "button": {
       "export": "导出",
@@ -446,7 +564,9 @@
       "exporting": "导出中...",
       "exportingJson": "导出中...",
       "exportingMarkdown": "导出中...",
-      "print": "PDF(备份)"
+      "print": "PDF(备份)",
+      "exportDocx": "Word（可编辑）",
+      "exportingDocx": "正在生成 Word…"
     },
     "toast": {
       "success": "PDF导出成功",
@@ -456,7 +576,10 @@
       "jsonSuccess": "配置导出成功",
       "jsonError": "配置导出失败",
       "markdownSuccess": "Markdown 导出成功",
-      "markdownError": "Markdown 导出失败"
+      "markdownError": "Markdown 导出失败",
+      "docxSuccess": "Word 文档已生成，可在 Word / WPS 中继续编辑",
+      "docxSimplified": "Word 已生成（当前模板较复杂，已使用简化布局）",
+      "docxError": "Word 导出失败：{message}"
     }
   },
   "workbench": {
@@ -514,6 +637,16 @@
         },
         "paragraphSpacing": {
           "title": "段落间距"
+        },
+        "projectsItemSpacing": {
+          "title": "项目条目间距",
+          "hint": "调整同一模块内各项目条目之间的垂直间距"
+        },
+        "density": {
+          "title": "排版密度",
+          "compact": "紧凑",
+          "standard": "标准",
+          "relaxed": "宽松"
         }
       },
       "mode": {
@@ -757,7 +890,15 @@
       "purple": "紫色",
       "magenta": "紫红",
       "pink": "粉色"
-    }
+    },
+    "clearFormat": "清除格式",
+    "clearFormatSelectText": "请先选中需要清除格式的文字",
+    "fontSizeDecrease": "减小字号",
+    "fontSizeIncrease": "增大字号",
+    "formatPainter": "格式刷",
+    "formatPainterLocked": "格式刷已锁定，Esc 退出",
+    "formatPainterNoSelection": "请先选中作为格式来源的文字",
+    "formatPainterMixed": "选区包含混合格式，已取起始部分的格式"
   },
   "iconSelector": {
     "all": "全部",
@@ -954,7 +1095,17 @@
     }
   },
   "templates": {
-    "switchTemplate": "切换模板"
+    "switchTemplate": "切换模板",
+    "switchTemplateDialog": {
+      "title": "切换模板",
+      "description": "切换到「{template}」。简历中的姓名、公司、项目等内容不会改变。",
+      "useTemplateDefault": "使用新模板默认排版",
+      "useTemplateDefaultHint": "套用该模板的字号、颜色和间距，清除我此前的排版调整",
+      "keepOverrides": "保留我的排版调整",
+      "keepOverridesHint": "只更换布局与模块顺序，保留我改过的字号、颜色和间距",
+      "cancel": "取消",
+      "confirm": "切换"
+    }
   },
   "themeModal": {
     "delete": {
@@ -1002,6 +1153,90 @@
         "question": "如何拖拽调整模块顺序？",
         "answer": "在左侧编辑面板的“布局”设置中，将光标悬停在模块卡片左侧的「拖拽手柄」（通常表现为六个点状图标）上，按住鼠标左键即可上下拖拽模块以重新排序整个简历的章节。"
       }
+    }
+  },
+  "aiOptimize": {
+    "button": "AI 优化",
+    "tasks": {
+      "polish": "润色表达",
+      "shorten": "精简内容",
+      "expand": "扩写内容",
+      "technical": "强化技术表达",
+      "business": "强化业务价值",
+      "metrics": "强化量化结果",
+      "star": "STAR 改写",
+      "hr": "HR 友好优化",
+      "ai_engineer": "AI 应用开发专项优化",
+      "custom": "自定义要求"
+    },
+    "dialog": {
+      "title": "AI 优化",
+      "modeSelection": "选中片段",
+      "modeFull": "整段优化",
+      "description": {
+        "ready": "填写可选的自定义要求后，点击「开始优化」",
+        "optimizing": "正在为您优化内容...",
+        "finished": "已经为您优化了内容，确认后才会替换原文"
+      },
+      "customInstructions": "自定义要求",
+      "customInstructionsPlaceholder": "例如：请把这一段改得更像高级 AI 应用开发工程师，但不要增加任何不存在的数据…（选填）",
+      "customInstructionsRequired": "请输入您的优化要求（必填），例如：请把这一段改得更加像高级 AI 应用开发工程师，但是不要增加任何不存在的数据。",
+      "content": {
+        "original": "原文",
+        "optimized": "AI 优化"
+      },
+      "quick": {
+        "shorter": "再短一点",
+        "professional": "更专业",
+        "technical": "更偏技术",
+        "business": "更偏业务",
+        "restore": "恢复原文"
+      },
+      "quickActionInstruction": "这是基于上一轮优化结果的迭代优化，请继续保持反虚构红线，不新增任何不存在的信息。",
+      "button": {
+        "cancel": "取消",
+        "start": "开始优化",
+        "regenerate": "重新生成",
+        "generating": "生成中...",
+        "apply": "替换原文"
+      },
+      "applied": "已应用优化内容",
+      "error": {
+        "configRequired": "请先配置 AI 模型",
+        "optimizeFailed": "优化失败",
+        "emptyContent": "没有可优化的内容"
+      }
+    }
+  },
+  "resumeAISettings": {
+    "title": "简历优化设置",
+    "description": "以下配置会在每次 AI 优化时自动注入 Prompt，帮助 AI 生成更贴合你求职目标的内容。",
+    "reset": "恢复默认",
+    "targetRole": "目标岗位",
+    "targetRolePlaceholder": "例如：AI 应用开发工程师",
+    "yearsOfExperience": "工作年限",
+    "yearsOfExperiencePlaceholder": "例如：3 年",
+    "technicalFocus": "技术方向",
+    "technicalFocusPlaceholder": "例如：RAG、Agent、LangGraph、MCP",
+    "writingStyle": "简历表达风格",
+    "writingStylePlaceholder": "例如：专业、简洁、结果导向、Owner 视角",
+    "language": "简历语言",
+    "languageZh": "中文",
+    "languageEn": "英文",
+    "maxBulletLength": "单条职责最大长度",
+    "maxBulletLengthPlaceholder": "例如：80（字，0 表示不限制）",
+    "preferMetrics": "优先量化",
+    "preferBusinessValue": "优先业务价值",
+    "preferTechnicalDepth": "强调技术难点",
+    "customPrompt": "自定义 AI Prompt",
+    "customPromptPlaceholder": "例如：所有描述都要体现 Owner 视角，突出独立交付能力…（选填，作为长期规则附加到每次优化）"
+  },
+  "typography": {
+    "fontSizeStepper": {
+      "decrease": "减小字号",
+      "increase": "增大字号",
+      "input": "字号",
+      "reset": "恢复默认"
     }
   }
 }

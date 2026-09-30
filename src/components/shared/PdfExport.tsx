@@ -11,7 +11,9 @@ import {
   exportToPdf
 } from "@/utils/export";
 import { exportResumeToBrowserPrint } from "@/utils/print";
+import { exportResumeAsDocx } from "@/exporters/docx";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +29,7 @@ import {
   PrintGlassIcon,
   JsonGlassIcon,
   MarkdownGlassIcon,
+  WordGlassIcon,
 } from "./GlassIcons";
 
 
@@ -98,6 +101,7 @@ const PdfExport = ({ children }: { children?: React.ReactNode }) => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isExportingJson, setIsExportingJson] = useState(false);
   const [isExportingMarkdown, setIsExportingMarkdown] = useState(false);
+  const [isExportingDocx, setIsExportingDocx] = useState(false);
   const { activeResume } = useResumeStore();
   const { globalSettings = {}, title } = activeResume || {};
   const t = useTranslations("pdfExport");
@@ -175,6 +179,25 @@ const PdfExport = ({ children }: { children?: React.ReactNode }) => {
     });
   };
 
+  const handleDocxExport = async () => {
+    if (!activeResume) return;
+    setIsExportingDocx(true);
+    try {
+      const result = await exportResumeAsDocx(activeResume);
+      if (result.ok) {
+        if (result.simplified) {
+          toast.info(t("toast.docxSimplified"));
+        } else {
+          toast.success(t("toast.docxSuccess"));
+        }
+      } else {
+        toast.error(t("toast.docxError", { message: result.error ?? "" }));
+      }
+    } finally {
+      setIsExportingDocx(false);
+    }
+  };
+
   const handlePrint = async () => {
     const resumeContent = document.getElementById("resume-preview");
     if (!resumeContent) {
@@ -201,6 +224,7 @@ const PdfExport = ({ children }: { children?: React.ReactNode }) => {
     isExportingImage ||
     isExportingJson ||
     isExportingMarkdown ||
+    isExportingDocx ||
     isPrinting;
   const loadingText =
     isExporting || isExportingLongPage || isExportingImage || isPrinting
@@ -209,7 +233,9 @@ const PdfExport = ({ children }: { children?: React.ReactNode }) => {
       ? t("button.exportingJson")
       : isExportingMarkdown
         ? t("button.exportingMarkdown")
-        : "";
+        : isExportingDocx
+          ? t("button.exportingDocx")
+          : "";
 
   return (
     <Dialog open={isOpen} onOpenChange={(val) => {
@@ -316,6 +342,16 @@ const PdfExport = ({ children }: { children?: React.ReactNode }) => {
               onClick={handleMarkdownExport}
               bgGradientClass="from-indigo-500/10 dark:from-indigo-500/20"
               hoverBorderClass="hover:border-indigo-500/40 hover:ring-1 hover:ring-indigo-500/20"
+            />
+            <ExportCard
+              icon={WordGlassIcon}
+              title={t("button.exportDocx")}
+              description={t("modal.docxDesc")}
+              isLoading={isExportingDocx}
+              isDisabled={isLoading || !activeResume}
+              onClick={handleDocxExport}
+              bgGradientClass="from-blue-500/10 dark:from-blue-500/20"
+              hoverBorderClass="hover:border-blue-500/40 hover:ring-1 hover:ring-blue-500/20"
             />
           </div>
 

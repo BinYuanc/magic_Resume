@@ -12,6 +12,7 @@ interface SectionTitleProps {
 const SectionTitle = ({ type, title, globalSettings, showTitle = true }: SectionTitleProps) => {
   const templateContext = useTemplateContext();
   const menuSections = templateContext?.menuSections ?? [];
+  const sectionStyle = templateContext?.sectionStyles?.[type];
 
   const renderTitle = useMemo(() => {
     if (type === "custom") return title;
@@ -25,9 +26,10 @@ const SectionTitle = ({ type, title, globalSettings, showTitle = true }: Section
       <h3
         className="font-bold uppercase tracking-[0.2em]"
         style={{ 
-          fontSize: `${globalSettings?.headerSize || 18}px`,
-          color: globalSettings?.themeColor || "#8e8e8e",
-          marginBottom: `${globalSettings?.paragraphSpacing || 16}px`
+          fontSize: `${sectionStyle?.fontSize ?? globalSettings?.headerSize ?? 18}px`,
+          color: sectionStyle?.color ?? globalSettings?.themeColor ?? "#8e8e8e",
+          marginBottom: `${sectionStyle?.itemSpacing ?? globalSettings?.paragraphSpacing ?? 16}px`,
+          fontWeight: sectionStyle?.fontWeight, textAlign: sectionStyle?.align,
         }}
       >
         {renderTitle}

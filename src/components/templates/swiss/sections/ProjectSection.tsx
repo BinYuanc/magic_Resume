@@ -5,6 +5,7 @@ import SectionTitle from "./SectionTitle";
 import SectionWrapper from "../../shared/SectionWrapper";
 import { Project, GlobalSettings } from "@/types/resume";
 import { normalizeRichTextContent } from "@/lib/richText";
+import { resolveNumber, resolveTextStyle } from "@/lib/textStyle";
 import { formatDateString } from "@/lib/utils";
 import { useLocale } from "@/i18n/compat/client";
 import { getProjectLinkMeta } from "@/lib/projectLink";
@@ -22,9 +23,9 @@ const ProjectSection: React.FC<ProjectSectionProps> = ({ projects, globalSetting
     const themeColor = globalSettings?.themeColor || "#E31C24";
 
     return (
-        <SectionWrapper sectionId="projects" style={{ marginTop: `${globalSettings?.sectionSpacing || 24}px` }}>
+        <SectionWrapper sectionId="projects" style={{ marginTop: `${globalSettings?.sectionSpacing ?? 24}px` }}>
             <SectionTitle type="projects" globalSettings={globalSettings} showTitle={showTitle} />
-            <motion.div layout="position" className="flex flex-col gap-6" style={{ marginTop: `${globalSettings?.paragraphSpacing || 16}px` }}>
+            <motion.div layout="position" className="flex flex-col gap-6" style={{ marginTop: `${globalSettings?.paragraphSpacing ?? 16}px`, ...(globalSettings?.sectionStyles?.projects?.itemSpacing !== undefined ? { gap: `${globalSettings.sectionStyles.projects.itemSpacing}px` } : {}) }}>
                 <AnimatePresence mode="popLayout">
                     {visibleProjects.map((project) => {
                         const projectLink = getProjectLinkMeta(project, {
@@ -36,16 +37,16 @@ const ProjectSection: React.FC<ProjectSectionProps> = ({ projects, globalSetting
                                 {/* 项目排版头部 */}
                                 <div className="flex items-baseline justify-between gap-3">
                                     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
-                                        <h4 
+                                        <h4
                                             className="font-extrabold text-slate-800 tracking-tight"
-                                            style={{ fontSize: `${globalSettings?.subheaderSize || 16}px` }}
+                                            style={resolveTextStyle(project.nameStyle, globalSettings?.subheaderSize, 16)}
                                         >
                                             {project.name}
                                         </h4>
                                         {centerSubtitle && (
-                                            <span 
+                                            <span
                                                 className="font-medium text-slate-500 border-l border-slate-300 pl-3 text-[14px]"
-                                                style={{ fontSize: `${(globalSettings?.subheaderSize || 16) - 1}px` }}
+                                                style={resolveTextStyle(project.roleStyle, undefined, (globalSettings?.subheaderSize ?? 16) - 1)}
                                             >
                                                 {project.role}
                                             </span>
@@ -74,9 +75,9 @@ const ProjectSection: React.FC<ProjectSectionProps> = ({ projects, globalSetting
 
                                 {/* 非居中模式下的角色展示 */}
                                 {project.role && !centerSubtitle && (
-                                    <div 
+                                    <div
                                         className="font-semibold text-slate-500 mt-1 uppercase tracking-wider"
-                                        style={{ fontSize: `${(globalSettings?.subheaderSize || 16) - 2}px` }}
+                                        style={resolveTextStyle(project.roleStyle, undefined, (globalSettings?.subheaderSize ?? 16) - 2)}
                                     >
                                         {project.role}
                                     </div>
@@ -92,8 +93,8 @@ const ProjectSection: React.FC<ProjectSectionProps> = ({ projects, globalSetting
                                         <div 
                                             className="text-slate-600 prose prose-sm max-w-none prose-p:my-1 [&>ul]:pl-4 [&>ul]:mt-1 [&>ul>li]:my-0.5 marker:text-slate-400"
                                             style={{ 
-                                                fontSize: `${globalSettings?.baseFontSize || 13}px`, 
-                                                lineHeight: globalSettings?.lineHeight || 1.6 
+                                                fontSize: `${globalSettings?.baseFontSize ?? 13}px`, 
+                                                lineHeight: globalSettings?.lineHeight ?? 1.6 
                                             }}
                                             dangerouslySetInnerHTML={{ __html: normalizeRichTextContent(project.description) }}
                                         />

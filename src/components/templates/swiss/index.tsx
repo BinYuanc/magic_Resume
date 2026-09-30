@@ -35,7 +35,7 @@ const SwissTemplate: React.FC<SwissTemplateProps> = ({ data, template }) => {
                 return <ProjectSection projects={data.projects} globalSettings={data.globalSettings} />;
             case "certificates":
                 return (
-                    <SectionWrapper sectionId="certificates" style={{ marginTop: `${data.globalSettings?.sectionSpacing || 24}px` }}>
+                    <SectionWrapper sectionId="certificates" style={{ marginTop: `${data.globalSettings?.sectionSpacing ?? 24}px` }}>
                         <SectionTitle type="certificates" globalSettings={data.globalSettings} />
                         <div className="mt-4">
                             <CertificatesSection certificates={data.certificates} />

@@ -420,6 +420,123 @@
       "swiss": {
         "name": "Swiss Aesthetic",
         "description": "Artistic Bauhaus layout with strong typographic hierarchy and geometric accents, showing modern minimalism"
+      },
+      "tabs": {
+        "builtin": "Built-in",
+        "mine": "My templates"
+      },
+      "contentSource": {
+        "sample": "Sample data",
+        "mine": "My resume"
+      },
+      "import": {
+        "button": "Import template",
+        "success": "Imported: {name}",
+        "conflictRenamed": "Template ID already exists, renamed to {name}"
+      },
+      "myTemplates": {
+        "empty": "No custom templates yet. Import a .zip template package to start.",
+        "custom": "Custom schema template",
+        "rename": "Rename",
+        "renameConfirm": "Save",
+        "renamed": "Renamed",
+        "duplicate": "Duplicate",
+        "duplicated": "Duplicated: {name}",
+        "export": "Export template",
+        "exported": "Exported: {name}",
+        "delete": "Delete",
+        "deleted": "Deleted: {name}",
+        "singleColumn": "Single column",
+        "twoColumn": "Two column",
+        "duplicateBuiltin": "Duplicate as my template"
+      },
+      "saveAsTemplate": {
+        "button": "Save current layout as template",
+        "noResume": "No active resume yet. Create one first.",
+        "title": "Save current layout as template",
+        "description": "Only layout, fonts, colors and spacing are saved — never resume content",
+        "name": "Template name",
+        "namePlaceholder": "e.g. AI Engineer layout",
+        "nameRequired": "Template name is required",
+        "descriptionField": "Description",
+        "descriptionPlaceholder": "What roles / style it fits (optional)",
+        "category": "Category",
+        "categories": {
+          "professional": "Professional",
+          "technology": "Technology",
+          "simple": "Minimal",
+          "creative": "Creative",
+          "ats": "ATS"
+        },
+        "tags": "Tags",
+        "tagsPlaceholder": "Comma separated, e.g. AI, single column",
+        "includeColors": "Include current colors",
+        "includeFonts": "Include current font sizes",
+        "includeSpacing": "Include current spacing",
+        "privacyNote": "Templates store presentation rules only. Names, experience and projects are never saved.",
+        "cancel": "Cancel",
+        "save": "Save as template",
+        "success": "Saved as template: {name}",
+        "leakBlocked": "Save blocked: {detail}",
+        "noResumeShort": "No resume"
+      },
+      "editor": {
+        "button": "Edit template",
+        "title": "Edit template: {name}",
+        "description": "Adjust layout, order, fonts, spacing and colors. Applies immediately after saving.",
+        "layout": {
+          "title": "Page layout",
+          "single": "Single column",
+          "two": "Two column",
+          "main": "Main",
+          "side": "Side",
+          "mainWeight": "Main column weight",
+          "sideWeight": "Side column weight"
+        },
+        "order": {
+          "title": "Section order",
+          "up": "Move up",
+          "down": "Move down",
+          "fixed": "Pinned to top"
+        },
+        "sections": {
+          "basic": "Basic info",
+          "summary": "Summary",
+          "skills": "Skills",
+          "experience": "Experience",
+          "projects": "Projects",
+          "education": "Education",
+          "certificates": "Certificates",
+          "custom": "Custom"
+        },
+        "typography": {
+          "title": "Typography",
+          "fontFamily": "Font family",
+          "baseFontSize": "Body font size (px)",
+          "headerSize": "Header size (px)",
+          "subheaderSize": "Subheader size (px)",
+          "lineHeight": "Line height"
+        },
+        "spacing": {
+          "title": "Spacing",
+          "pagePadding": "Page padding",
+          "sectionGap": "Section gap",
+          "itemGap": "Item gap"
+        },
+        "colors": {
+          "title": "Colors",
+          "primary": "Primary color",
+          "text": "Text color"
+        },
+        "sectionHeader": {
+          "title": "Section header style",
+          "border": "Divider under heading"
+        },
+        "privacyNote": "The editor only changes presentation rules; resume content is untouched.",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saved": "Template saved",
+        "leakBlocked": "Save blocked: {detail}"
       }
     }
   },
@@ -433,7 +550,8 @@
       "printDesc": "Save via system print dialog. Use as a fallback or for custom margins.",
       "jsonDesc": "Export your resume data as JSON to backup or transfer between devices.",
       "markdownDesc": "Convert to plain Markdown text for easy sharing with AI models.",
-      "privacyNotice": "Magic Resume promise never to collect, upload, or store any of your resume data. Your privacy is fully protected."
+      "privacyNotice": "Magic Resume promise never to collect, upload, or store any of your resume data. Your privacy is fully protected.",
+      "docxDesc": "Export an editable DOCX preserving text structure, font sizes, colors, bold, lists, links and basic layout. Complex visual templates may fall back to a simplified layout."
     },
     "button": {
       "export": "Export",
@@ -445,7 +563,9 @@
       "exporting": "Exporting...",
       "exportingJson": "Exporting...",
       "exportingMarkdown": "Exporting...",
-      "print": "Browser Print"
+      "print": "Browser Print",
+      "exportDocx": "Word (editable)",
+      "exportingDocx": "Generating Word…"
     },
     "toast": {
       "success": "PDF exported successfully",
@@ -455,7 +575,10 @@
       "jsonSuccess": "Configuration exported successfully",
       "jsonError": "Configuration export failed",
       "markdownSuccess": "Markdown exported successfully",
-      "markdownError": "Markdown export failed"
+      "markdownError": "Markdown export failed",
+      "docxSuccess": "Word document generated. Editable in Word / WPS.",
+      "docxSimplified": "Word generated. Current template is complex, a simplified layout was used.",
+      "docxError": "Word export failed: {message}"
     }
   },
   "previewDock": {
@@ -565,6 +688,16 @@
         },
         "paragraphSpacing": {
           "title": "Paragraph Spacing"
+        },
+        "projectsItemSpacing": {
+          "title": "Project item spacing",
+          "hint": "Adjust vertical space between project items in the same section"
+        },
+        "density": {
+          "title": "Layout density",
+          "compact": "Compact",
+          "standard": "Standard",
+          "relaxed": "Relaxed"
         }
       },
       "mode": {
@@ -807,7 +940,15 @@
       "purple": "Purple",
       "magenta": "Magenta",
       "pink": "Pink"
-    }
+    },
+    "clearFormat": "Clear formatting",
+    "clearFormatSelectText": "Select the text to clear formatting first",
+    "fontSizeDecrease": "Decrease font size",
+    "fontSizeIncrease": "Increase font size",
+    "formatPainter": "Format painter",
+    "formatPainterLocked": "Format painter locked, press Esc to exit",
+    "formatPainterNoSelection": "Select the source text to copy format from first",
+    "formatPainterMixed": "Mixed formats in selection; format from the start is used"
   },
   "iconSelector": {
     "all": "All",
@@ -952,7 +1093,17 @@
     }
   },
   "templates": {
-    "switchTemplate": "Switch Template"
+    "switchTemplate": "Switch Template",
+    "switchTemplateDialog": {
+      "title": "Switch template",
+      "description": "Switch to \"{template}\". Your name, companies and projects stay untouched.",
+      "useTemplateDefault": "Use new template defaults",
+      "useTemplateDefaultHint": "Apply its fonts, colors and spacing; clear my previous tweaks",
+      "keepOverrides": "Keep my formatting",
+      "keepOverridesHint": "Only change layout and section order; keep font sizes, colors and spacing",
+      "cancel": "Cancel",
+      "confirm": "Switch"
+    }
   },
   "themeModal": {
     "delete": {
@@ -1000,6 +1151,90 @@
         "question": "How do I drag and drop to reorder modules?",
         "answer": "In the 'Layout' settings of the left edit panel, hover your cursor over the 'Drag Handle' (usually represented by a six-dot icon) on the left side of the module card. Click and hold the left mouse button to drag the module up or down to reorder the sections of your entire resume."
       }
+    }
+  },
+  "aiOptimize": {
+    "button": "AI Optimize",
+    "tasks": {
+      "polish": "Polish writing",
+      "shorten": "Shorten",
+      "expand": "Expand",
+      "technical": "Strengthen technical depth",
+      "business": "Highlight business value",
+      "metrics": "Strengthen quantified results",
+      "star": "STAR rewrite",
+      "hr": "HR-friendly",
+      "ai_engineer": "AI engineer optimization",
+      "custom": "Custom instruction"
+    },
+    "dialog": {
+      "title": "AI Optimize",
+      "modeSelection": "Selection",
+      "modeFull": "Whole field",
+      "description": {
+        "ready": "Add optional instructions, then click \"Start optimize\"",
+        "optimizing": "Optimizing your content...",
+        "finished": "Content optimized. It will only replace the original after you confirm."
+      },
+      "customInstructions": "Custom instructions",
+      "customInstructionsPlaceholder": "e.g. Make this sound like a senior AI application engineer, without adding any data that does not exist… (optional)",
+      "customInstructionsRequired": "Please enter your optimization instruction (required), e.g. Make this sound like a senior AI application engineer, without adding any data that does not exist.",
+      "content": {
+        "original": "Original",
+        "optimized": "AI Optimized"
+      },
+      "quick": {
+        "shorter": "Shorter",
+        "professional": "More professional",
+        "technical": "More technical",
+        "business": "More business-focused",
+        "restore": "Restore original"
+      },
+      "quickActionInstruction": "This is an iterative optimization based on the previous result. Keep the no-fabrication rules and do not add any information that does not exist.",
+      "button": {
+        "cancel": "Cancel",
+        "start": "Start optimize",
+        "regenerate": "Regenerate",
+        "generating": "Generating...",
+        "apply": "Replace original"
+      },
+      "applied": "Optimized content applied",
+      "error": {
+        "configRequired": "Please configure an AI model first",
+        "optimizeFailed": "Optimization failed",
+        "emptyContent": "No content to optimize"
+      }
+    }
+  },
+  "resumeAISettings": {
+    "title": "Resume Optimization Settings",
+    "description": "These settings are injected into the prompt on every AI optimization to better match your job target.",
+    "reset": "Reset",
+    "targetRole": "Target role",
+    "targetRolePlaceholder": "e.g. AI Application Engineer",
+    "yearsOfExperience": "Years of experience",
+    "yearsOfExperiencePlaceholder": "e.g. 3 years",
+    "technicalFocus": "Technical focus",
+    "technicalFocusPlaceholder": "e.g. RAG, Agent, LangGraph, MCP",
+    "writingStyle": "Writing style",
+    "writingStylePlaceholder": "e.g. Professional, concise, result-oriented",
+    "language": "Resume language",
+    "languageZh": "Chinese",
+    "languageEn": "English",
+    "maxBulletLength": "Max length per bullet",
+    "maxBulletLengthPlaceholder": "e.g. 80 (chars, 0 = unlimited)",
+    "preferMetrics": "Prefer metrics",
+    "preferBusinessValue": "Prefer business value",
+    "preferTechnicalDepth": "Emphasize technical depth",
+    "customPrompt": "Custom AI prompt",
+    "customPromptPlaceholder": "e.g. All descriptions should reflect an owner mindset… (optional, appended to every optimization)"
+  },
+  "typography": {
+    "fontSizeStepper": {
+      "decrease": "Decrease",
+      "increase": "Increase",
+      "input": "Font size",
+      "reset": "Reset to default"
     }
   }
 }

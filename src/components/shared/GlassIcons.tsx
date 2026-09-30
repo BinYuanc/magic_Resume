@@ -141,3 +141,25 @@ export const ImageGlassIcon = ({ className, isLoading }: GlassIconProps) => (
     </rect>
   </svg>
 );
+
+export const WordGlassIcon = ({ className, isLoading }: GlassIconProps) => (
+  <svg viewBox="0 0 100 100" fill="none" className={className}>
+    <defs>
+      <filter id="word-glow"><feGaussianBlur stdDeviation="9" /></filter>
+      <linearGradient id="word-glass" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#ffffff" stopOpacity="0.5" />
+        <stop offset="100%" stopColor="#ffffff" stopOpacity="0.05" />
+      </linearGradient>
+      <linearGradient id="word-border" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#ffffff" stopOpacity="0.8" />
+        <stop offset="100%" stopColor="#ffffff" stopOpacity="0.1" />
+      </linearGradient>
+    </defs>
+    <rect x="15" y="25" width="60" height="40" rx="8" fill="#2563eb" filter="url(#word-glow)" opacity="0.75" />
+    <rect x="20" y="30" width="55" height="40" rx="8" fill="#1d4ed8" />
+    <rect x="10" y="20" width="65" height="45" rx="8" fill="url(#word-glass)" stroke="url(#word-border)" strokeWidth="1.5" />
+    <path d="M26 35 L30 50 L34 38 L38 50 L42 35 M50 35 L50 50 M50 35 L58 35 M50 42 L56 42" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+      {isLoading && <animate attributeName="stroke-opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite" />}
+    </path>
+  </svg>
+);

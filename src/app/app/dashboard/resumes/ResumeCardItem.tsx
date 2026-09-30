@@ -19,7 +19,8 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import ResumeTemplateComponent from "@/components/templates";
-import { DEFAULT_TEMPLATES } from "@/config";
+import { findTemplateView } from "@/lib/templateCatalog";
+import { useCustomTemplateStore } from "@/store/useCustomTemplateStore";
 import { cn } from "@/lib/utils";
 import { normalizeFontFamily } from "@/utils/fonts";
 import { Edit2, Copy, Trash2 } from "lucide-react";
@@ -49,9 +50,8 @@ export const ResumeCardItem = ({
     const [scale, setScale] = React.useState(0.24);
     const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
     
-    const activeTemplate =
-        DEFAULT_TEMPLATES.find((template) => template.id === resume.templateId) ??
-        DEFAULT_TEMPLATES[0];
+    const customTemplates = useCustomTemplateStore((state) => state.templates);
+    const activeTemplate = findTemplateView(resume.templateId, customTemplates);
     const templateNameKey =
         activeTemplate.id === "left-right" ? "leftRight" : activeTemplate.id;
 

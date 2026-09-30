@@ -13,7 +13,10 @@ import {
   MenuSection,
   Certificate,
 } from "../types/resume";
-import { DEFAULT_TEMPLATES } from "@/config";
+import { findTemplateView, listTemplateViews } from "@/lib/templateCatalog";
+import { useCustomTemplateStore } from "./useCustomTemplateStore";
+import { resolveTemplateDefinition } from "@/lib/templateResolver";
+import { templateDefaultSettings } from "@/lib/resumePresentation";
 import {
   initialResumeState,
   initialResumeStateEn,
@@ -92,7 +95,10 @@ interface ResumeStore {
   removeCustomItem: (sectionId: string, itemId: string) => void;
   updateGlobalSettings: (settings: Partial<GlobalSettings>) => void;
   setThemeColor: (color: string) => void;
-  setTemplate: (templateId: string) => void;
+  setTemplate: (
+    templateId: string,
+    options?: { preserveOverrides?: boolean }
+  ) => void;
   addResume: (resume: ResumeData) => string;
   addCertificate: (certificate: Certificate) => void;
   updateCertificate: (id: string, updates: Partial<Certificate>) => void;
@@ -311,9 +317,11 @@ export const useResumeStore = create(
         }
 
         const id = generateUUID();
+        // 支持用自定义模板直接创建简历（内置模板优先匹配）
+        const customTemplates = useCustomTemplateStore.getState().templates;
         const template = templateId
-          ? DEFAULT_TEMPLATES.find((t) => t.id === templateId)
-          : DEFAULT_TEMPLATES[0];
+          ? findTemplateView(templateId, customTemplates)
+          : listTemplateViews(customTemplates)[0];
 
         const newResume: ResumeData = {
           ...initialResumeData,
@@ -321,6 +329,8 @@ export const useResumeStore = create(
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           templateId: template?.id,
+          globalSettings: templateDefaultSettings(resolveTemplateDefinition(template?.id, customTemplates), initialResumeData.globalSettings),
+          basic: { ...initialResumeData.basic, layout: template.basic.layout },
           title: `${locale === "en" ? "New Resume" : "新建简历"} ${id.slice(
             0,
             6
@@ -940,24 +950,32 @@ export const useResumeStore = create(
         }
       },
 
-      setTemplate: (templateId) => {
+      setTemplate: (templateId, options) => {
         const { activeResumeId, resumes } = get();
         if (!activeResumeId) return;
 
-        const template = DEFAULT_TEMPLATES.find((t) => t.id === templateId);
-        if (!template) return;
+        const customTemplates = useCustomTemplateStore.getState().templates;
+        // 自定义模板也要能切换：统一走模板目录查询（内置 + 用户模板）
+        const template = findTemplateView(templateId, customTemplates);
+        const exists = listTemplateViews(customTemplates).some(
+          (item) => item.id === templateId
+        );
+        if (!exists) return;
 
+        const resume = resumes[activeResumeId];
+        // preserveOverrides = true → 保留用户排版（globalSettings + styleOverrides 都不动）
+        if (options?.preserveOverrides) {
+          get().updateResume(activeResumeId, { templateId });
+          return;
+        }
+
+        // 默认：使用模板默认排版 —— 只重置「展示层」，绝不碰 ResumeData 内容
         get().updateResume(activeResumeId, {
           templateId,
-          globalSettings: {
-            ...resumes[activeResumeId].globalSettings,
-            themeColor: template.colorScheme.primary,
-            sectionSpacing: template.spacing.sectionGap,
-            paragraphSpacing: template.spacing.itemGap,
-            pagePadding: template.spacing.contentPadding,
-          },
+          globalSettings: templateDefaultSettings(resolveTemplateDefinition(templateId, customTemplates), resume.globalSettings),
+          styleOverrides: undefined,
           basic: {
-            ...resumes[activeResumeId].basic,
+            ...resume.basic,
             layout: template.basic.layout,
           },
         });

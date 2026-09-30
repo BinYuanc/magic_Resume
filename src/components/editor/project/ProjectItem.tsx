@@ -11,8 +11,9 @@ import { ChevronDown, Eye, EyeOff, GripVertical, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import Field from "../Field";
 import ThemeModal from "@/components/shared/ThemeModal";
+import FontSizeStepper from "@/components/shared/typography/FontSizeStepper";
 import { useTranslations } from "@/i18n/compat/client";
-import { Project } from "@/types/resume";
+import { Project, ResumeTextStyle } from "@/types/resume";
 import { Input } from "@/components/ui/input";
 
 interface ProjectEditorProps {
@@ -24,6 +25,12 @@ interface ProjectEditorProps {
 
 const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, onSave }) => {
   const t = useTranslations("workbench.projectItem");
+  // 三级样式体系的全局层：局部样式缺失时回退到 subheaderSize
+  const globalSettings = useResumeStore(
+    (state) => state.activeResume?.globalSettings
+  );
+  const inheritedFontSize = globalSettings?.subheaderSize ?? 16;
+
   const handleChange = (field: keyof Project, value: string) => {
     onSave({
       ...project,
@@ -31,22 +38,70 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, onSave }) => {
     });
   };
 
+  /**
+   * 更新局部文本样式（字号）。
+   * fontSize 为 undefined 时表示恢复默认：从局部样式中移除该字段，
+   * 若样式对象已空则整体移除，保持旧数据结构干净。
+   */
+  const handleStyleChange = (
+    key: "nameStyle" | "roleStyle",
+    fontSize?: number
+  ) => {
+    const current = project[key];
+    if (fontSize === undefined) {
+      if (!current) return;
+      const rest: ResumeTextStyle = { ...current };
+      delete rest.fontSize;
+      onSave({
+        ...project,
+        [key]: Object.keys(rest).length > 0 ? rest : undefined,
+      });
+      return;
+    }
+    onSave({
+      ...project,
+      [key]: { ...current, fontSize },
+    });
+  };
+
   return (
     <div className="space-y-5">
       <div className="grid gap-5">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field
-            label={t("labels.name")}
-            value={project.name}
-            onChange={(value) => handleChange("name", value)}
-            placeholder={t("placeholders.name")}
-          />
-          <Field
-            label={t("labels.role")}
-            value={project.role}
-            onChange={(value) => handleChange("role", value)}
-            placeholder={t("placeholders.role")}
-          />
+          <div className="flex items-end gap-2">
+            <div className="flex-1 min-w-0">
+              <Field
+                label={t("labels.name")}
+                value={project.name}
+                onChange={(value) => handleChange("name", value)}
+                placeholder={t("placeholders.name")}
+              />
+            </div>
+            <FontSizeStepper
+              value={project.nameStyle?.fontSize}
+              fallbackValue={inheritedFontSize}
+              onChange={(size) => handleStyleChange("nameStyle", size)}
+              label={t("labels.name")}
+              className="mb-0.5 shrink-0"
+            />
+          </div>
+          <div className="flex items-end gap-2">
+            <div className="flex-1 min-w-0">
+              <Field
+                label={t("labels.role")}
+                value={project.role}
+                onChange={(value) => handleChange("role", value)}
+                placeholder={t("placeholders.role")}
+              />
+            </div>
+            <FontSizeStepper
+              value={project.roleStyle?.fontSize}
+              fallbackValue={inheritedFontSize}
+              onChange={(size) => handleStyleChange("roleStyle", size)}
+              label={t("labels.role")}
+              className="mb-0.5 shrink-0"
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between font-medium">

@@ -72,7 +72,7 @@ const BaseInfo: React.FC<BaseInfoProps> = ({ basic, globalSettings }) => {
               <motion.h1
                 layout="position"
                 className="font-bold tracking-widest whitespace-normal break-normal [overflow-wrap:normal] text-black"
-                style={{ fontSize: `${(globalSettings?.headerSize || 20) * 2}px`, lineHeight: "1.1", marginBottom: "8px" }}
+                style={{ fontSize: `${(globalSettings?.headerSize ?? 20) * 2}px`, lineHeight: "1.1", marginBottom: "8px" }}
               >
                 {basic.name}
               </motion.h1>
@@ -102,14 +102,14 @@ const BaseInfo: React.FC<BaseInfoProps> = ({ basic, globalSettings }) => {
               <motion.h2
                 layout="position"
                 className="font-normal tracking-wide text-gray-700 whitespace-normal break-normal [overflow-wrap:normal]"
-                style={{ fontSize: `${globalSettings?.subheaderSize || 16}px`, lineHeight: "1.3" }}
+                style={{ fontSize: `${globalSettings?.subheaderSize ?? 16}px`, lineHeight: "1.3" }}
               >
                 {basic.title}
               </motion.h2>
             </div>
           )}
 
-          <motion.div layout="position" className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2 uppercase tracking-[0.05em] text-gray-500 w-[80%] flex-shrink-0" style={{ fontSize: `${globalSettings?.baseFontSize || 14}px`, lineHeight: 1.5 }}>
+          <motion.div layout="position" className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2 uppercase tracking-[0.05em] text-gray-500 w-[80%] flex-shrink-0" style={{ fontSize: `${globalSettings?.baseFontSize ?? 14}px`, lineHeight: 1.5 }}>
             {allFields.map((item) => {
               const customFieldHref =
                 item.custom && "href" in item && typeof item.href === "string"

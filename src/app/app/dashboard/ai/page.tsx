@@ -44,6 +44,7 @@ import { cn } from "@/lib/utils";
 import { ResumeImportError } from "@/lib/resume-import-schema";
 import { ModelAssignment } from "./ModelAssignment";
 import { ProviderMark } from "./ProviderMark";
+import { ResumeAISettingsSection } from "./ResumeAISettingsSection";
 import { useModelTest } from "./useModelTest";
 
 interface ModelCardProps {
@@ -755,6 +756,9 @@ export default function AISettingsPage() {
           </div>
         </div>
       </section>
+
+      {/* 简历优化设置 */}
+      <ResumeAISettingsSection />
     </div>
   );
 }

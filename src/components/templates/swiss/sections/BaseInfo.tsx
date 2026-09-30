@@ -132,7 +132,7 @@ const BaseInfo = ({ basic = {} as BasicInfo, globalSettings, template }: BaseInf
                 <motion.div 
                     layout="position" 
                     className={styles.cardWrapper}
-                    style={{ fontSize: `${globalSettings?.baseFontSize || 13}px` }}
+                    style={{ fontSize: `${globalSettings?.baseFontSize ?? 13}px` }}
                 >
                     {allFields.map((item) => {
                         const customFieldHref = item.custom && "href" in item && typeof item.href === "string" ? item.href : null;

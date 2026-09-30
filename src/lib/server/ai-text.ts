@@ -1,9 +1,10 @@
 import { AI_MODEL_CONFIGS, type AIModelType } from "../../config/ai";
 import { AI_PROVIDER_DEFINITIONS } from "../../config/ai-models";
+import { isResumeAITask, type ResumeAISettings } from "../../types/ai-resume";
 import { combineAbortSignals } from "../abort-signal";
 import { ResumeImportError, parseJsonPayload } from "../resume-import-schema";
 import { asRecord, createTextStream, fetchAI, readAIOutput, validateAIConnection } from "./ai-provider";
-import { GRAMMAR_PROMPT, POLISH_PROMPT } from "./ai-prompts";
+import { GRAMMAR_PROMPT, POLISH_PROMPT, buildResumePrompt } from "./ai-prompts";
 import { readLimitedJson } from "./ai-request";
 
 function connectionFromRequest(body: Record<string, unknown>) {
@@ -26,9 +27,21 @@ export async function handleTextRequest(request: Request, task: "polish" | "gram
     const connection = connectionFromRequest(body);
     if (task !== "test" && (typeof body.content !== "string" || !body.content.trim())) throw new ResumeImportError("invalidRequest");
     const custom = typeof body.customInstructions === "string" ? body.customInstructions.trim() : "";
+    // 简历优化助手：携带 resumeTask 时走任务化 Prompt Builder，否则保持原有润色行为
+    const resumeTask = isResumeAITask(body.resumeTask) ? body.resumeTask : null;
+    const resumeSettings = asRecord(body.resumeSettings) as Partial<ResumeAISettings>;
+    const selectionMode = body.selectionMode === true;
     const system = task === "grammar" ? GRAMMAR_PROMPT
       : task === "test" ? "Reply with exactly OK."
-        : POLISH_PROMPT + (custom ? `\n\n用户额外要求：\n${custom}` : "");
+        : resumeTask
+          ? buildResumePrompt({
+              task: resumeTask,
+              content: String(body.content),
+              userSettings: resumeSettings,
+              customInstruction: custom || undefined,
+              selectionMode,
+            })
+          : POLISH_PROMPT + (custom ? `\n\n用户额外要求：\n${custom}` : "");
     const text = task === "test" ? "Test this connection." : String(body.content);
     const abort = new AbortController();
     const signal = combineAbortSignals([

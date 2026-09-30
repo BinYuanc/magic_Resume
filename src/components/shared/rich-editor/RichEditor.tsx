@@ -6,6 +6,9 @@ import { ListKit } from "@tiptap/extension-list";
 import TextAlign from "@tiptap/extension-text-align";
 import { FontSize, TextStyle } from "@tiptap/extension-text-style";
 import FontSizeSelect from "./FontSizeSelect";
+import FontSizeStepButton from "./FontSizeStepButtons";
+import FormatPainterButton from "./FormatPainterButton";
+import ClearFormatButton from "./ClearFormatButton";
 import Underline from "@tiptap/extension-underline";
 import Color from "@tiptap/extension-color";
 import Link from "@tiptap/extension-link";
@@ -42,6 +45,13 @@ import {
   stripLegacyRichTextClasses,
   stripTrailingListParagraph,
 } from "@/lib/richText";
+import type {
+  AIOptimizeRequest,
+  ResumeAITask,
+  RichEditorAPI,
+} from "@/types/ai-resume";
+import { plainTextToParagraphs, sanitizePastedHtml } from "@/lib/pasteSanitize";
+import AIOptimizeMenu from "../ai/AIOptimizeMenu";
 import { BetterSpace } from "./BetterSpace";
 import { toast } from "sonner";
 import "@/styles/tiptap.scss";
@@ -51,6 +61,10 @@ interface RichTextEditorProps {
   onChange: (content: string) => void;
   placeholder?: string;
   onPolish?: () => void;
+  /** AI 优化助手：传入后替换旧的 AI 润色按钮为「AI 优化 ▼」菜单 */
+  onAIOptimize?: (request: AIOptimizeRequest) => void;
+  /** 向上层暴露选区替换能力（仅替换选中文字时使用） */
+  editorApiRef?: React.MutableRefObject<RichEditorAPI | null>;
 }
 
 interface ColorOption {
@@ -435,6 +449,8 @@ const RichTextEditor = ({
   placeholder = "",
   onChange,
   onPolish,
+  onAIOptimize,
+  editorApiRef,
 }: RichTextEditorProps) => {
   const t = useTranslations("richEditor");
   const initialContent = useMemo(
@@ -445,6 +461,9 @@ const RichTextEditor = ({
   const [isEditorEmpty, setIsEditorEmpty] = React.useState(
     !hasMeaningfulRichTextContent(content)
   );
+  // Ctrl+Shift+V 纯文本粘贴标记 / editor 引用（editorProps 闭包内使用）
+  const plainPasteRef = React.useRef(false);
+  const editorRef = React.useRef<Editor | null>(null);
 
   const extensions = useMemo(
     () => [
@@ -502,6 +521,34 @@ const RichTextEditor = ({
           "text-neutral-900 dark:text-neutral-200"
         ),
       },
+      // 普通粘贴：净化外部 HTML（去 style/class/字体/颜色/背景/间距），
+      // 保留 bold/italic/underline/list/link 等基础格式，继承当前简历样式
+      transformPastedHTML: (html: string) => sanitizePastedHtml(html),
+      handleDOMEvents: {
+        // 记录 Ctrl+Shift+V，下一次 handlePaste 走纯文本粘贴
+        keydown: (_view: unknown, event: KeyboardEvent) => {
+          if (
+            (event.ctrlKey || event.metaKey) &&
+            event.shiftKey &&
+            event.key.toLowerCase() === "v"
+          ) {
+            plainPasteRef.current = true;
+          }
+          return false;
+        },
+      },
+      handlePaste: (_view: unknown, event: ClipboardEvent) => {
+        if (!plainPasteRef.current) return false;
+        plainPasteRef.current = false;
+        const text = event.clipboardData?.getData("text/plain");
+        if (!text) return false;
+        editorRef.current
+          ?.chain()
+          .focus()
+          .insertContent(plainTextToParagraphs(text))
+          .run();
+        return true;
+      },
     }),
     []
   );
@@ -526,6 +573,10 @@ const RichTextEditor = ({
   });
 
   useEffect(() => {
+    editorRef.current = editor;
+  }, [editor]);
+
+  useEffect(() => {
     if (!editor) return;
 
     const normalizedContent = normalizeEditorHtml(content);
@@ -544,6 +595,62 @@ const RichTextEditor = ({
     lastSyncedContentRef.current = normalizedContent;
     setIsEditorEmpty(editor.isEmpty);
   }, [content, editor]);
+
+  /**
+   * AI 优化菜单选择任务后：
+   * 捕获当前 Tiptap Selection。选中了文字 → 只优化选中片段；
+   * 未选中 → 优化整个字段。
+   */
+  const handleAITaskSelect = (task: ResumeAITask) => {
+    if (!editor || !onAIOptimize) return;
+
+    const { from, to, empty } = editor.state.selection;
+    let selection: AIOptimizeRequest["selection"] = null;
+
+    if (!empty) {
+      const text = editor.state.doc.textBetween(from, to, "\n").trim();
+      if (text) {
+        selection = { from, to, text };
+      }
+    }
+
+    onAIOptimize({ task, selection });
+  };
+
+  /**
+   * 向上层暴露选区替换能力：
+   * - 选区在同一个文本块内 → 插入纯文本（内联替换，不破坏句子结构）
+   * - 跨块 → 插入解析后的 HTML
+   */
+  useEffect(() => {
+    if (!editorApiRef || !editor) return;
+
+    editorApiRef.current = {
+      replaceSelection: (from, to, html, plainText) => {
+        const docSize = editor.state.doc.content.size;
+        const safeFrom = Math.max(0, Math.min(from, docSize));
+        const safeTo = Math.max(safeFrom, Math.min(to, docSize));
+        const $from = editor.state.doc.resolve(safeFrom);
+        const $to = editor.state.doc.resolve(safeTo);
+        const sameParent = $from.parent === $to.parent;
+
+        editor
+          .chain()
+          .focus()
+          .insertContentAt(
+            { from: safeFrom, to: safeTo },
+            sameParent ? plainText : html,
+          )
+          .run();
+      },
+    };
+
+    return () => {
+      if (editorApiRef) {
+        editorApiRef.current = null;
+      }
+    };
+  }, [editor, editorApiRef]);
 
   if (!editor) {
     return null;
@@ -588,7 +695,11 @@ const RichTextEditor = ({
           <LinkButton editor={editor} />
           <TextColorButton editor={editor} />
           <BackgroundColorButton editor={editor} />
+          <FormatPainterButton editor={editor} />
+          <FontSizeStepButton editor={editor} direction={-1} />
           <FontSizeSelect editor={editor} />
+          <FontSizeStepButton editor={editor} direction={1} />
+          <ClearFormatButton editor={editor} />
         </div>
 
         <div className={cn("h-5 w-px", "bg-border/60 dark:bg-neutral-800")} />
@@ -660,21 +771,25 @@ const RichTextEditor = ({
           >
             <Redo className="h-4 w-4" />
           </MenuButton>
-          {onPolish && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onPolish();
-              }}
-              className="h-8 px-3 text-xs gap-1.5 ml-1 border-primary/20 hover:border-primary/40 text-primary hover:bg-primary/5 transition-all duration-300 group"
-            >
-              <Wand2 className="h-3 w-3 group-hover:rotate-12 transition-transform" />
-              {t("aiPolish")}
-            </Button>
+          {onAIOptimize ? (
+            <AIOptimizeMenu onSelect={handleAITaskSelect} />
+          ) : (
+            onPolish && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onPolish();
+                }}
+                className="h-8 px-3 text-xs gap-1.5 ml-1 border-primary/20 hover:border-primary/40 text-primary hover:bg-primary/5 transition-all duration-300 group"
+              >
+                <Wand2 className="h-3 w-3 group-hover:rotate-12 transition-transform" />
+                {t("aiPolish")}
+              </Button>
+            )
           )}
         </div>
       </div>

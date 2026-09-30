@@ -18,7 +18,8 @@ const SectionTitle = ({ type, title, globalSettings, showTitle = true }: Section
         return menuSections.find((s) => s.id === type)?.title;
     }, [menuSections, type, title]);
 
-    const themeColor = globalSettings?.themeColor;
+    const sectionStyle = templateContext?.sectionStyles?.[type];
+    const themeColor = sectionStyle?.color ?? globalSettings?.themeColor;
     if (!showTitle) return null;
 
     // Timeline SectionTitle is rendered by the template wrapper (renderTimelineItem)
@@ -28,7 +29,7 @@ const SectionTitle = ({ type, title, globalSettings, showTitle = true }: Section
             className="text-xl font-bold mb-4"
             style={{
                 color: themeColor,
-                fontSize: `${globalSettings?.headerSize || 20}px`,
+                fontSize: `${sectionStyle?.fontSize ?? globalSettings?.headerSize ?? 20}px`,
             }}
         >
             {renderTitle}

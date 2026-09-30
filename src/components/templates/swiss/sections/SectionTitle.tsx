@@ -18,14 +18,15 @@ const SectionTitle = ({ type, title, globalSettings, showTitle = true }: Section
         return menuSections.find((s) => s.id === type)?.title;
     }, [menuSections, type, title]);
 
-    const themeColor = globalSettings?.themeColor || "#E31C24"; // 默认瑞士红
+    const sectionStyle = templateContext?.sectionStyles?.[type];
+    const themeColor = sectionStyle?.color ?? globalSettings?.themeColor ?? "#E31C24";
     if (!showTitle) return null;
 
     return (
         <div
             className="flex flex-col w-full"
             style={{
-                marginBottom: `${globalSettings?.paragraphSpacing || 12}px`,
+                marginBottom: `${globalSettings?.paragraphSpacing ?? 12}px`,
             }}
         >
             <div className="flex items-center gap-2.5">
@@ -33,15 +34,16 @@ const SectionTitle = ({ type, title, globalSettings, showTitle = true }: Section
                 <div
                     className="w-[6px] rounded-sm shrink-0"
                     style={{
-                        height: `${(globalSettings?.headerSize || 18) * 1.1}px`,
+                        height: `${(globalSettings?.headerSize ?? 18) * 1.1}px`,
                         backgroundColor: themeColor,
                     }}
                 />
                 <h3
                     className="font-black tracking-wider uppercase"
                     style={{
-                        fontSize: `${globalSettings?.headerSize || 18}px`,
-                        color: "#0f172a",
+                        fontSize: `${sectionStyle?.fontSize ?? globalSettings?.headerSize ?? 18}px`,
+                        color: sectionStyle?.color ?? "#0f172a",
+                        fontWeight: sectionStyle?.fontWeight, textAlign: sectionStyle?.align,
                     }}
                 >
                     {renderTitle}

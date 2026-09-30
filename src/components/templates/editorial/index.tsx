@@ -37,7 +37,7 @@ const EditorialTemplate: React.FC<EditorialTemplateProps> = ({ data, template })
         return <SelfEvaluationSection content={data.selfEvaluationContent} globalSettings={data.globalSettings} />;
       case "certificates":
         return (
-          <SectionWrapper sectionId="certificates" className="w-full" style={{ marginTop: `${data.globalSettings?.sectionSpacing || 32}px` }}>
+          <SectionWrapper sectionId="certificates" className="w-full" style={{ marginTop: `${data.globalSettings?.sectionSpacing ?? 32}px` }}>
             <SectionTitle type="certificates" globalSettings={data.globalSettings} />
             <CertificatesSection certificates={data.certificates} />
           </SectionWrapper>
@@ -57,9 +57,9 @@ const EditorialTemplate: React.FC<EditorialTemplateProps> = ({ data, template })
       style={{
         backgroundColor: colorScheme.background || "#FFFFFF",
         color: colorScheme.text || "#1a1a1a",
-        margin: `-${data.globalSettings?.pagePadding || 0}px`,
-        padding: `${data.globalSettings?.pagePadding || 0}px`,
-        paddingTop: `${(data.globalSettings?.pagePadding || 0) + 16}px`,
+        margin: `-${data.globalSettings?.pagePadding ?? 0}px`,
+        padding: `${data.globalSettings?.pagePadding ?? 0}px`,
+        paddingTop: `${(data.globalSettings?.pagePadding ?? 0) + 16}px`,
       }}
     >
       {enabledSections.map((section) => (

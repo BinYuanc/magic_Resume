@@ -18,16 +18,19 @@ const SectionTitle = ({ type, title, globalSettings, showTitle = true }: Section
         return menuSections.find((s) => s.id === type)?.title;
     }, [menuSections, type, title]);
 
-    const themeColor = globalSettings?.themeColor;
+    const sectionStyle = templateContext?.sectionStyles?.[type];
+    const themeColor = sectionStyle?.color ?? globalSettings?.themeColor;
     if (!showTitle) return null;
 
     return (
         <h3
             className="pb-1 mb-2 tracking-widest uppercase font-bold"
             style={{
-                fontSize: `${globalSettings?.headerSize || 16}px`,
+                fontSize: `${sectionStyle?.fontSize ?? globalSettings?.headerSize ?? 16}px`,
                 color: themeColor,
-                marginBottom: `${globalSettings?.paragraphSpacing}px`,
+                marginBottom: `${sectionStyle?.itemSpacing ?? globalSettings?.paragraphSpacing ?? 0}px`,
+                fontWeight: sectionStyle?.fontWeight,
+                textAlign: sectionStyle?.align,
             }}
         >
             {renderTitle}

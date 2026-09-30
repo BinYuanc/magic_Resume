@@ -27,7 +27,8 @@ import {
 } from "@/components/ui/popover";
 import { Plus } from "lucide-react";
 import { STANDARD_MODULES } from "@/config/modules";
-import { DEFAULT_TEMPLATES } from "@/config";
+import { findTemplateView } from "@/lib/templateCatalog";
+import { useCustomTemplateStore } from "@/store/useCustomTemplateStore";
 import { getFontOptions, normalizeFontFamily } from "@/utils/fonts";
 
 const lineHeightOptions = [
@@ -35,6 +36,40 @@ const lineHeightOptions = [
   { value: "relaxed", label: "适中" },
   { value: "loose", label: "宽松" },
 ];
+
+/**
+ * 排版密度预设：只修改全局默认参数（baseFontSize/lineHeight/
+ * paragraphSpacing/sectionSpacing），不影响任何局部样式 override。
+ */
+const DENSITY_PRESETS = [
+  {
+    key: "compact",
+    values: {
+      baseFontSize: 13,
+      lineHeight: 1.35,
+      paragraphSpacing: 3,
+      sectionSpacing: 8,
+    },
+  },
+  {
+    key: "standard",
+    values: {
+      baseFontSize: 14,
+      lineHeight: 1.5,
+      paragraphSpacing: 6,
+      sectionSpacing: 14,
+    },
+  },
+  {
+    key: "relaxed",
+    values: {
+      baseFontSize: 15,
+      lineHeight: 1.6,
+      paragraphSpacing: 10,
+      sectionSpacing: 20,
+    },
+  },
+] as const;
 
 function SettingCard({
   icon: Icon,
@@ -96,9 +131,8 @@ export function SidePanel({
   const { themeColor = THEME_COLORS[0] } = globalSettings;
   const t = useTranslations("workbench.sidePanel");
 
-  const currentTemplate = DEFAULT_TEMPLATES.find(
-    (t) => t.id === activeResume?.templateId
-  ) ?? DEFAULT_TEMPLATES[0];
+  const customTemplates = useCustomTemplateStore((state) => state.templates);
+  const currentTemplate = findTemplateView(activeResume?.templateId, customTemplates);
 
   const availableModules = useMemo(() => {
     return (
@@ -751,6 +785,72 @@ export function SidePanel({
                     px
                   </span>
                 </div>
+              </div>
+            </div>
+
+            {/* 模块级间距：项目条目间距（只影响项目模块，不影响工作经历等） */}
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">
+                {t("spacing.projectsItemSpacing.title")}
+              </Label>
+              <div className="flex items-center gap-4">
+                <Slider
+                  value={[
+                    globalSettings?.sectionStyles?.projects?.itemSpacing ??
+                      globalSettings?.paragraphSpacing ??
+                      0,
+                  ]}
+                  min={0}
+                  max={50}
+                  step={1}
+                  onValueChange={([value]) =>
+                    updateGlobalSettings?.({
+                      sectionStyles: {
+                        ...globalSettings?.sectionStyles,
+                        projects: { itemSpacing: value },
+                      },
+                    })
+                  }
+                  className="flex-1"
+                />
+                <div className="flex items-center">
+                  <span className="w-12 text-center text-sm text-muted-foreground">
+                    {globalSettings?.sectionStyles?.projects?.itemSpacing ??
+                      globalSettings?.paragraphSpacing ??
+                      0}
+                  </span>
+                  <span className="ml-1 text-sm text-muted-foreground">
+                    px
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("spacing.projectsItemSpacing.hint")}
+              </p>
+            </div>
+
+            {/* 排版密度预设：只修改全局默认参数，不清除局部字号 override */}
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">
+                {t("spacing.density.title")}
+              </Label>
+              <div className="flex gap-2">
+                {DENSITY_PRESETS.map((preset) => (
+                  <button
+                    key={preset.key}
+                    type="button"
+                    aria-label={t(`spacing.density.${preset.key}`)}
+                    title={t(`spacing.density.${preset.key}`)}
+                    onClick={() => updateGlobalSettings?.(preset.values)}
+                    className={cn(
+                      "flex-1 rounded-md border px-3 py-1.5 text-sm transition-colors",
+                      "border-input text-muted-foreground",
+                      "hover:border-primary/50 hover:text-foreground hover:bg-primary/5"
+                    )}
+                  >
+                    {t(`spacing.density.${preset.key}`)}
+                  </button>
+                ))}
               </div>
             </div>
           </div>

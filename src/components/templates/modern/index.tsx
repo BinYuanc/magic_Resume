@@ -36,7 +36,7 @@ const ModernTemplate: React.FC<ModernTemplateProps> = ({ data, template }) => {
                 return <ProjectSection projects={data.projects} globalSettings={data.globalSettings} />;
             case "certificates":
                 return (
-                    <SectionWrapper sectionId="certificates" style={{ marginTop: `${data.globalSettings?.sectionSpacing || 24}px` }}>
+                    <SectionWrapper sectionId="certificates" style={{ marginTop: `${data.globalSettings?.sectionSpacing ?? 24}px` }}>
                         <SectionTitle type="certificates" globalSettings={data.globalSettings} />
                         <CertificatesSection certificates={data.certificates} />
                     </SectionWrapper>
@@ -61,7 +61,7 @@ const ModernTemplate: React.FC<ModernTemplateProps> = ({ data, template }) => {
         <table
             className="w-full border-collapse"
             style={{
-                height: `calc(297mm - ${(data.globalSettings?.pagePadding || 32) * 2}px)`,
+                height: `calc(297mm - ${(data.globalSettings?.pagePadding ?? 32) * 2}px)`,
                 tableLayout: 'fixed'
             }}
         >
