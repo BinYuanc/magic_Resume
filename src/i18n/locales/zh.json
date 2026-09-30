@@ -428,7 +428,8 @@
       },
       "contentSource": {
         "sample": "示例内容",
-        "mine": "我的内容"
+        "mine": "我的内容",
+        "switchTo": "切换到{target}"
       },
       "import": {
         "button": "导入自定义模板",

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { resolveFontSize, resolveNumber, resolveTextStyle } from "../src/lib/textStyle";
 import { snapshotFromMarks, type MarkLike } from "../src/components/shared/rich-editor/useFormatPainter";
-import { FONT_SIZE_STEPS, nextFontSizeStep } from "../src/components/shared/rich-editor/FontSizeStepButtons";
+import { FONT_SIZE_STEPS, nextFontSizeStep, resolveStepAnchor } from "../src/components/shared/rich-editor/FontSizeStepButtons";
 import type { Project } from "../src/types/resume";
 
 // ---------- resolveFontSize / resolveNumber：三级 fallback 链 ----------
@@ -91,4 +91,19 @@ test("nextFontSizeStep: 沿档位阶梯上下，不越界", () => {
   assert.equal(nextFontSizeStep(17, -1), 16);
   assert.equal(nextFontSizeStep(FONT_SIZE_STEPS[FONT_SIZE_STEPS.length - 1], 1), 32); // 顶端封顶
   assert.equal(nextFontSizeStep(FONT_SIZE_STEPS[0], -1), 10); // 底端封底
+});
+
+test("resolveStepAnchor: 默认字号下 A+ 从简历默认字号往上走", () => {
+  // 默认 16px：A+ 得 18px，A- 得 15px（而不是从写死的 14px 出发得 15px）
+  assert.equal(nextFontSizeStep(resolveStepAnchor(null, 16), 1), 18);
+  assert.equal(nextFontSizeStep(resolveStepAnchor(null, 16), -1), 15);
+  // 默认 15px：A+ 得 16px
+  assert.equal(nextFontSizeStep(resolveStepAnchor(null, 15), 1), 16);
+  // 已设显式字号时以显式字号为准
+  assert.equal(resolveStepAnchor(13, 16), 13);
+  assert.equal(nextFontSizeStep(resolveStepAnchor(13, 16), 1), 14);
+  // 拿不到简历默认字号时兜底 14px
+  assert.equal(resolveStepAnchor(null, Number.NaN), 14);
+  assert.equal(resolveStepAnchor(null, 0), 14);
+  assert.equal(resolveStepAnchor(null, -5), 14);
 });

@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Copy, Download, FileUp, Pencil, Save, Star, Trash2 } from "lucide-react";
+import { Copy, Download, FileText, FileUp, Pencil, Save, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ResumeTemplateComponent from "@/components/templates";
 import { initialResumeState, initialResumeStateEn } from "@/config/initialResumeData";
@@ -26,6 +26,12 @@ import { normalizeFontFamily } from "@/utils/fonts";
 
 const A4_WIDTH_PX = 793.700787;
 const PREVIEW_MODAL_SCALE = 0.529166667;
+
+/** 模板预览的内容来源：「示例内容」或「我的内容」 */
+type TemplateContentSource = "sample" | "mine";
+/** 上次选择记在本地，下次打开模板页沿用 */
+const CONTENT_SOURCE_STORAGE_KEY = "magic-resume:templates-content-source";
+const DEFAULT_CONTENT_SOURCE: TemplateContentSource = "mine";
 
 const PRESET_COLORS = [
   { name: "default", value: "" },
@@ -241,8 +247,8 @@ const TemplatesPage = () => {
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   /** 内置模板 / 我的模板 */
   const [tab, setTab] = useState<"builtin" | "mine">("builtin");
-  /** 模板预览用示例内容还是我的真实简历内容 */
-  const [contentSource, setContentSource] = useState<"sample" | "mine">("mine");
+  /** 模板预览用示例内容还是我的真实简历内容（记住上次选择） */
+  const [contentSource, setContentSource] = useState<TemplateContentSource>(DEFAULT_CONTENT_SOURCE);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [renaming, setRenaming] = useState<TemplateDefinition | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -253,6 +259,26 @@ const TemplatesPage = () => {
 
   const myTemplates = customTemplates;
   const allTemplateViews = listTemplateViews(myTemplates);
+
+  // 首帧用默认值、挂载后再读本地记录：避免 SSR 与首屏水合不一致
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(CONTENT_SOURCE_STORAGE_KEY);
+      if (stored === "sample" || stored === "mine") setContentSource(stored);
+    } catch {
+      /* 隐私模式等场景读不到本地记录，保持默认值即可 */
+    }
+  }, []);
+
+  const toggleContentSource = () => {
+    const next: TemplateContentSource = contentSource === "mine" ? "sample" : "mine";
+    setContentSource(next);
+    try {
+      window.localStorage.setItem(CONTENT_SOURCE_STORAGE_KEY, next);
+    } catch {
+      /* 写不进去也不影响本次使用 */
+    }
+  };
 
   useEffect(() => {
     let currentIndex = 0;
@@ -426,28 +452,17 @@ const TemplatesPage = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <button
-                    type="button"
-                    onClick={() => setContentSource("sample")}
-                    className={cn(
-                      "px-2 py-1 rounded-md transition-colors",
-                      contentSource === "sample" ? "bg-muted font-medium" : "hover:bg-muted/60"
-                    )}
-                  >
-                    {t("contentSource.sample")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setContentSource("mine")}
-                    className={cn(
-                      "px-2 py-1 rounded-md transition-colors",
-                      contentSource === "mine" ? "bg-muted font-medium" : "hover:bg-muted/60"
-                    )}
-                  >
-                    {t("contentSource.mine")}
-                  </button>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleContentSource}
+                  title={t("contentSource.switchTo", {
+                    target: contentSource === "mine" ? t("contentSource.sample") : t("contentSource.mine"),
+                  })}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  {contentSource === "mine" ? t("contentSource.mine") : t("contentSource.sample")}
+                </Button>
 
                 <input
                   ref={fileInputRef}

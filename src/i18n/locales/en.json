@@ -427,7 +427,8 @@
       },
       "contentSource": {
         "sample": "Sample data",
-        "mine": "My resume"
+        "mine": "My resume",
+        "switchTo": "Switch to {target}"
       },
       "import": {
         "button": "Import template",

@@ -28,6 +28,9 @@ _startup.log
 .tmp-build/
 .verify/
 dsh-search.json
+.scan/
+tsc-check*.txt
+.git-msg.txt
 
 # debug
 npm-debug.log*
