@@ -27,6 +27,7 @@
 _startup.log
 .tmp-build/
 .verify/
+dsh-search.json
 
 # debug
 npm-debug.log*
