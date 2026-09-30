@@ -65,6 +65,17 @@ pnpm dev
 
 4. Open browser and visit `http://localhost:3000`
 
+### One-click start on Windows (download and run)
+
+No terminal needed: download the ZIP from GitHub, extract it, and double-click a launcher in the project root.
+
+- `start-magic-resume.bat` — visible window; installs dependencies automatically on first run (needs Node.js 20.19+)
+- `start-magic-resume.vbs` — silent start (no console window)
+- `stop-magic-resume.bat` — stop the server
+
+The launchers resolve their own folder (they work from any path), prefer pnpm and fall back to npm, then
+minimize the window and open `http://localhost:3000` once the server is ready.
+
 ## 📦 Build and Deploy
 
 ```bash

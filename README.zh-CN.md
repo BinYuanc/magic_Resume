@@ -65,6 +65,17 @@ pnpm dev
 
 4. 打开浏览器访问 `http://localhost:3000`
 
+### Windows 一键启动（下载即用）
+
+不想敲命令：从 GitHub 下载 ZIP 解压后，直接双击根目录的启动脚本即可。
+
+- `start-magic-resume.bat`：带窗口启动（首次运行会自动安装依赖，需要 Node.js 20.19+）
+- `start-magic-resume.vbs`：静默启动（不显示黑色命令行窗口）
+- `stop-magic-resume.bat`：停止服务
+
+脚本会自动定位自己所在的目录（放到任意路径都能用），优先使用 pnpm，没有 pnpm 时回退到 npm；
+服务就绪后自动最小化窗口并打开 `http://localhost:3000`。
+
 ## 📦 构建打包
 
 ```bash
