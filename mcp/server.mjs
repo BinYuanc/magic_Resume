@@ -36,7 +36,7 @@ const server = http.createServer(async (req, res) => {
     res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
     if (req.method === "OPTIONS") return send(res, 204, null);
     if (req.method !== "POST") return send(res, 405, { error: "只接受 POST" });
-    if (!isToken(req.headers.authorization?.replace(/^Bearer /, ""))) return send(res, 401, { error: "配对码无效；请向 Codex 获取 get_connection_info" });
+    if (!isToken(req.headers.authorization?.replace(/^Bearer /, ""))) return send(res, 401, { error: "配对码无效；请在当前 MCP 客户端中调用 get_connection_info" });
     const body = await readBody(req);
     if (typeof body.clientId !== "string" || !/^[\w-]{8,80}$/.test(body.clientId)) return send(res, 400, { error: "clientId 无效" });
     const now = Date.now();
