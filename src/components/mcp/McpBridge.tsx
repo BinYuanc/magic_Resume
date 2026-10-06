@@ -11,7 +11,7 @@ export const useMcpBridge = create<BridgeState>((set) => ({
   connect: (connection) => {
     const url = new URL(connection.url);
     if (url.protocol !== "http:" || url.hostname !== "127.0.0.1" || !url.port || url.username || url.password) throw new Error("桥接地址必须是 http://127.0.0.1:端口");
-    if (!/^[a-f0-9]{48}$/.test(connection.token.trim())) throw new Error("配对码格式无效，请向 Codex 获取 get_connection_info");
+    if (!/^[a-f0-9]{48}$/.test(connection.token.trim())) throw new Error("配对码格式无效，请在 MCP 客户端中调用 get_connection_info 获取");
     const next = { url: url.origin, token: connection.token.trim(), clientId: connection.clientId && /^[\w-]{8,80}$/.test(connection.clientId) ? connection.clientId : crypto.randomUUID() };
     sessionStorage.setItem(KEY, JSON.stringify(next));
     set({ connection: next, status: "正在连接", connected: false });
@@ -48,7 +48,7 @@ export function McpBridge() {
       try {
         await request("/connect");
         if (stopped) return;
-        useMcpBridge.setState({ status: "Codex 已连接", connected: true });
+        useMcpBridge.setState({ status: "MCP 客户端已连接", connected: true });
         while (!stopped) {
           const task = await request("/poll");
           if (stopped) return;
