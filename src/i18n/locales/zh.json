@@ -454,6 +454,7 @@
       },
       "saveAsTemplate": {
         "button": "保存当前排版为模板",
+        "workbenchButton": "保存为模板",
         "noResume": "还没有打开中的简历，先去创建一份再保存排版",
         "title": "保存当前排版为模板",
         "description": "只保存布局、字号、颜色和间距，不保存任何简历内容",

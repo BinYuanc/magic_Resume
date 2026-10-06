@@ -453,6 +453,7 @@
       },
       "saveAsTemplate": {
         "button": "Save current layout as template",
+        "workbenchButton": "Save as template",
         "noResume": "No active resume yet. Create one first.",
         "title": "Save current layout as template",
         "description": "Only layout, fonts, colors and spacing are saved — never resume content",

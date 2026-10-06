@@ -7,6 +7,7 @@ import {
   Edit2,
   Undo2,
   Redo2,
+  LayoutTemplate,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "@/lib/navigation";
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { GrammarCheckDrawer } from "./grammar/GrammarCheckDrawer";
+import SaveAsTemplateDialog from "@/components/shared/templates/SaveAsTemplateDialog";
 import { getFileHandle, getConfig } from "@/utils/fileSystem";
 
 interface EditorHeaderProps {
@@ -46,6 +48,8 @@ export function EditorHeader({ isMobile }: EditorHeaderProps) {
 
   const [backupConfigured, setBackupConfigured] = useState<boolean | null>(null);
   const [backupPath, setBackupPath] = useState<string>("");
+  /** 把当前简历的排版（字号/字体/间距/颜色/布局）保存为新模板 */
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
 
   useEffect(() => {
     const checkBackup = async () => {
@@ -241,11 +245,24 @@ export function EditorHeader({ isMobile }: EditorHeaderProps) {
           )}
 
           <ThemeToggle></ThemeToggle>
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden md:inline-flex items-center gap-1.5"
+            onClick={() => setSaveTemplateOpen(true)}
+            disabled={!activeResume}
+            title={activeResume ? t("dashboard.templates.saveAsTemplate.description") : t("dashboard.templates.saveAsTemplate.noResume")}
+            aria-label={t("dashboard.templates.saveAsTemplate.workbenchButton")}
+          >
+            <LayoutTemplate className="h-4 w-4" />
+            {t("dashboard.templates.saveAsTemplate.workbenchButton")}
+          </Button>
           <div className="md:flex items-center ">
             <PdfExport />
           </div>
         </div>
       </div>
+      <SaveAsTemplateDialog open={saveTemplateOpen} onOpenChange={setSaveTemplateOpen} />
     </motion.header>
   );
 }
