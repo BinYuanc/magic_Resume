@@ -12,6 +12,7 @@ import { GitHubStars } from "@/components/shared/GitHubStars";
 import ScrollHeader from "./client/ScrollHeader";
 import MobileMenu from "./client/MobileMenu";
 import GoDashboard from "./GoDashboard";
+import { McpDocsButton } from "@/components/mcp/McpDocsButton";
 
 export default function LandingHeader() {
   const t = useTranslations("home");
@@ -35,6 +36,7 @@ export default function LandingHeader() {
             </div>
 
             <div className="hidden md:flex items-center gap-4">
+              <McpDocsButton />
               <LanguageSwitch />
               <ThemeToggle>
                 <div className="w-9 h-9 relative cursor-pointer rounded-xl hover:bg-accent/80 flex items-center justify-center transition-colors">
@@ -71,6 +73,7 @@ export default function LandingHeader() {
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         buttonText={t("header.startButton")}
+        extraItems={[{ icon: null, label: "MCP 接入说明", component: <McpDocsButton /> }]}
       />
     </>
   );

@@ -231,6 +231,50 @@
   word-break: break-word;
 }
 
+/* 正文小标题：继承正文比例，编辑区与模板预览使用同一层级。 */
+.tiptap h3:empty,
+#resume-preview .text-baseFont h3:empty,
+.resume-preview .text-baseFont h3:empty,
+.schema-rich-text h3:empty {
+  display: none;
+}
+
+.tiptap h3,
+#resume-preview .text-baseFont h3,
+.resume-preview .text-baseFont h3,
+.schema-rich-text h3 {
+  font-size: 1.08em;
+  font-weight: 700;
+  line-height: 1.5;
+  margin: 0.8em 0 0.3em;
+  break-after: avoid;
+}
+
+.tiptap h3:first-child,
+#resume-preview .text-baseFont h3:first-child,
+.resume-preview .text-baseFont h3:first-child,
+.schema-rich-text h3:first-child {
+  margin-top: 0;
+}
+
+/* 「标题与正文同行」：带 data-body-inline 的小标题与紧随其后的段落排在同一行，
+   编辑区、模板预览、PDF 与 Word 导出（richTextToDocx 合并段落）保持一致。 */
+.tiptap h3[data-body-inline="1"],
+#resume-preview h3[data-body-inline="1"],
+.resume-preview h3[data-body-inline="1"],
+.schema-rich-text h3[data-body-inline="1"] {
+  display: inline;
+  margin: 0;
+  break-after: auto;
+}
+
+.tiptap h3[data-body-inline="1"] + p,
+#resume-preview h3[data-body-inline="1"] + p,
+.resume-preview h3[data-body-inline="1"] + p,
+.schema-rich-text h3[data-body-inline="1"] + p {
+  display: inline;
+}
+
 .tiptap a:hover,
 #resume-preview a.rich-text-link:hover,
 .resume-preview a.rich-text-link:hover {

@@ -9,6 +9,7 @@ import {
 import { ChevronDown, Eye, EyeOff, GripVertical, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import Field from "../Field";
+import BodySectionsField from "../BodySectionsField";
 import { Experience } from "@/types/resume";
 import ThemeModal from "@/components/shared/ThemeModal";
 import { useResumeStore } from "@/store/useResumeStore";
@@ -59,11 +60,10 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({
           placeholder={t("placeholders.date")}
           showPresentSwitch={true}
         />
-        <Field
+        <BodySectionsField
           label={t("labels.details")}
           value={experience.details}
           onChange={(value) => handleChange("details", value)}
-          type="editor"
           placeholder={t("placeholders.details")}
         />
       </div>

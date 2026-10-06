@@ -48,6 +48,8 @@ export interface DocxParagraph {
   border?: string;
   background?: string;
   lineHeight?: number;
+  /** 段落左缩进，单位为字符（与编辑器 em 对应）。 */
+  indentCharacters?: number;
 }
 
 export interface RichTextDocx {
@@ -70,6 +72,11 @@ function parseInlineStyle(element: Element): { color?: string; fontSize?: number
 function normalizeColor(value: string): string | undefined {
   const color = colorToHex(value);
   return color ? `#${color.toLowerCase()}` : undefined;
+}
+
+function readIndent(element: Element): number {
+  const value = Number(element.getAttribute("data-indent"));
+  return Number.isFinite(value) ? Math.max(0, Math.min(8, Math.round(value))) : 0;
 }
 
 interface WalkContext {
@@ -175,6 +182,17 @@ export function richTextToDocxParagraphs(
   const parser = new DOMParser();
   const doc = parser.parseFromString(`<body>${html}</body>`, "text/html");
 
+  // 「标题与正文同行」（h3[data-body-inline=1]）不单独成段：
+  // 标题的 runs 暂存，并入紧随其后的第一个段落，保证 Word 与网页预览一致。
+  let pendingInlineHeading: DocxRun[] | null = null;
+  const emit = (paragraph: DocxParagraph) => {
+    if (pendingInlineHeading) {
+      paragraph.runs = [...pendingInlineHeading, ...paragraph.runs];
+      pendingInlineHeading = null;
+    }
+    paragraphs.push(paragraph);
+  };
+
   const walkBlock = (node: Node, numId?: number): void => {
     if (node.nodeType === Node.TEXT_NODE) {
       if (node.textContent?.trim()) paragraphs.push({ runs: [{ text: node.textContent, fontSize: defaults?.fontSize, color: defaults?.color, fontFamily: defaults?.fontFamily }], spacingAfter: defaults?.paragraphSpacing });
@@ -184,24 +202,33 @@ export function richTextToDocxParagraphs(
     const element = node as Element;
     const tag = element.tagName.toLowerCase();
 
-    if (tag === "p") {
+    if (tag === "p" || tag === "h3") {
+      const isHeading = tag === "h3";
+      if (isHeading && !element.textContent?.trim()) return;
+      const headingSize = Math.round((defaults?.fontSize ?? 14) * 1.08);
       const runs: DocxRun[] = [];
       collectRuns(
         element,
         {
-          bold: false,
+          bold: isHeading,
           italic: false,
           underline: false,
-          fontSize: defaults?.fontSize,
+          fontSize: isHeading ? headingSize : defaults?.fontSize,
           color: defaults?.color,
           fontFamily: defaults?.fontFamily,
         },
         runs
       );
-      paragraphs.push({
+      if (isHeading && element.getAttribute("data-body-inline") === "1") {
+        if (runs.length > 0) pendingInlineHeading = runs;
+        return;
+      }
+      emit({
         runs,
         numId,
-        spacingAfter: defaults?.paragraphSpacing,
+        indentCharacters: readIndent(element),
+        spacingBefore: isHeading ? headingSize * 0.8 : undefined,
+        spacingAfter: isHeading ? headingSize * 0.3 : defaults?.paragraphSpacing,
         align: /text-align\s*:\s*(center|right)/i.exec(element.getAttribute("style") ?? "")?.[1]?.toLowerCase() as DocxParagraph["align"],
       });
       return;
@@ -211,6 +238,7 @@ export function richTextToDocxParagraphs(
       const listNumId = isOrdered ? 1 + ++orderedListCount : 1;
       for (const li of Array.from(element.children)) {
         if (li.tagName.toLowerCase() !== "li") continue;
+        const paragraphStart = paragraphs.length;
         // li 里的直接内容 + 嵌套 p 都摊平为挂编号的段落
         for (const child of Array.from(li.childNodes)) {
           if (child.nodeType === Node.ELEMENT_NODE && ["ul", "ol"].includes((child as Element).tagName.toLowerCase())) {
@@ -231,9 +259,13 @@ export function richTextToDocxParagraphs(
               },
               runs
             );
-            paragraphs.push({ runs, numId: listNumId, spacingAfter: defaults?.paragraphSpacing });
+            emit({ runs, numId: listNumId, spacingAfter: defaults?.paragraphSpacing });
             break; // 已整体收集
           }
+        }
+        const indent = readIndent(li);
+        if (indent) for (const paragraph of paragraphs.slice(paragraphStart)) {
+          paragraph.indentCharacters = (paragraph.indentCharacters ?? 0) + indent;
         }
       }
       return;
@@ -253,12 +285,17 @@ export function richTextToDocxParagraphs(
       runs
     );
     if (runs.length > 0) {
-      paragraphs.push({ runs, spacingAfter: defaults?.paragraphSpacing });
+      emit({ runs, spacingAfter: defaults?.paragraphSpacing, indentCharacters: readIndent(element) });
     }
   };
 
   for (const child of Array.from(doc.body.childNodes)) {
     walkBlock(child);
+  }
+
+  // 同行标题后面没有可并入的段落时，仍作为独立段落输出，避免丢标题
+  if (pendingInlineHeading) {
+    paragraphs.push({ runs: pendingInlineHeading, spacingAfter: defaults?.paragraphSpacing });
   }
 
   return { paragraphs, orderedListCount };

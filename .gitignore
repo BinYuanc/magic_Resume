@@ -30,7 +30,9 @@ _startup.log
 dsh-search.json
 .scan/
 tsc-check*.txt
+tsc-c*.txt
 .git-msg.txt
+commit-msg.tmp
 
 # debug
 npm-debug.log*

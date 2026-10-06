@@ -116,6 +116,10 @@ function paragraphXml(
     : undefined;
   if (backgroundHex) pPrParts.push(`<w:shd w:val="clear" w:fill="${backgroundHex.toLowerCase()}"/>`);
   if (spacing.length > 0) pPrParts.push(`<w:spacing ${spacing.join(" ")}/>`);
+  if (paragraph.indentCharacters !== undefined && Number.isFinite(paragraph.indentCharacters) && paragraph.indentCharacters > 0) {
+    const left = pxToTwips(Math.min(64, paragraph.indentCharacters) * options.baseFontSize) + (paragraph.numId !== undefined ? 360 : 0);
+    pPrParts.push(`<w:ind w:left="${left}"${paragraph.numId !== undefined ? ' w:hanging="180"' : ""}/>`);
+  }
   // 对齐值来自模板/导入的简历数据，用白名单而不是直接插值，避免拼出非法 XML
   if (paragraph.align === "center" || paragraph.align === "right") {
     pPrParts.push(`<w:jc w:val="${paragraph.align}"/>`);

@@ -36,6 +36,9 @@ interface FieldProps {
   required?: boolean;
   className?: string;
   showPresentSwitch?: boolean;
+  /** 正文块小标题排版（仅正文块使用）：stacked = 标题独占一行，inline = 标题与正文同行 */
+  bodyTitleMode?: "stacked" | "inline";
+  onToggleBodyTitleMode?: () => void;
 }
 
 const Field = ({
@@ -47,6 +50,8 @@ const Field = ({
   required,
   className,
   showPresentSwitch,
+  bodyTitleMode,
+  onToggleBodyTitleMode,
 }: FieldProps) => {
   const [yearInput, setYearInput] = useState("");
   const [displayMonth, setDisplayMonth] = useState<Date>(new Date());
@@ -190,6 +195,8 @@ const Field = ({
             onChange={onChange}
             placeholder={placeholder}
             editorApiRef={editorApiRef}
+            bodyTitleMode={bodyTitleMode}
+            onToggleBodyTitleMode={onToggleBodyTitleMode}
             onAIOptimize={(request) => {
               if (checkConfiguration()) {
                 setOptimizeRequest(request);

@@ -10,6 +10,7 @@ import {
 import { ChevronDown, Eye, EyeOff, GripVertical, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import Field from "../Field";
+import BodySectionsField from "../BodySectionsField";
 import ThemeModal from "@/components/shared/ThemeModal";
 import FontSizeStepper from "@/components/shared/typography/FontSizeStepper";
 import { useTranslations } from "@/i18n/compat/client";
@@ -145,11 +146,10 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, onSave }) => {
           placeholder={t("placeholders.date")}
           showPresentSwitch={true}
         />
-        <Field
+        <BodySectionsField
           label={t("labels.description")}
           value={project.description}
           onChange={(value) => handleChange("description", value)}
-          type="editor"
           placeholder={t("placeholders.description")}
         />
       </div>

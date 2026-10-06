@@ -16,6 +16,7 @@ import { Providers } from "@/app/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { getPreferredLocale } from "@/i18n/runtime";
 import { ReactGrab } from "@/components/dev/ReactGrab";
+import { McpBridge } from "@/components/mcp/McpBridge";
 
 const defaultFontPreloadLinks = [
   {
@@ -90,6 +91,7 @@ function RootComponent() {
         >
           <Providers>
             <ReactGrab />
+            <McpBridge />
             <Outlet />
             <Toaster position="top-center" richColors />
           </Providers>

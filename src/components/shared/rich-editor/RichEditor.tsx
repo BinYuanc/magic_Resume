@@ -36,6 +36,8 @@ import {
   Wand2,
   Link2,
   Unlink,
+  ArrowRightToLine,
+  CornerDownLeft,
 } from "lucide-react";
 import Highlight from "@tiptap/extension-highlight";
 import { cn } from "@/lib/utils";
@@ -53,6 +55,8 @@ import type {
 import { plainTextToParagraphs, sanitizePastedHtml } from "@/lib/pasteSanitize";
 import AIOptimizeMenu from "../ai/AIOptimizeMenu";
 import { BetterSpace } from "./BetterSpace";
+import { Indent } from "./Indent";
+import IndentControls from "./IndentControls";
 import { toast } from "sonner";
 import "@/styles/tiptap.scss";
 
@@ -65,6 +69,12 @@ interface RichTextEditorProps {
   onAIOptimize?: (request: AIOptimizeRequest) => void;
   /** 向上层暴露选区替换能力（仅替换选中文字时使用） */
   editorApiRef?: React.MutableRefObject<RichEditorAPI | null>;
+  /**
+   * 正文块小标题的排版：stacked = 标题独占一行，inline = 标题与正文同一行。
+   * 仅正文块（BodySectionsField）传入；不传时不显示该按钮。
+   */
+  bodyTitleMode?: "stacked" | "inline";
+  onToggleBodyTitleMode?: () => void;
 }
 
 interface ColorOption {
@@ -451,6 +461,8 @@ const RichTextEditor = ({
   onPolish,
   onAIOptimize,
   editorApiRef,
+  bodyTitleMode,
+  onToggleBodyTitleMode,
 }: RichTextEditorProps) => {
   const t = useTranslations("richEditor");
   const initialContent = useMemo(
@@ -509,6 +521,7 @@ const RichTextEditor = ({
       }),
       Highlight.configure({ multicolor: true }),
       BetterSpace,
+      Indent,
     ],
     []
   );
@@ -756,6 +769,8 @@ const RichTextEditor = ({
 
         <div className={cn("h-5 w-px", "bg-border/60 dark:bg-neutral-800")} />
 
+        <IndentControls editor={editor} />
+
         <div className="flex items-center space-x-1">
           <MenuButton
             onClick={() => editor.chain().focus().undo().run()}
@@ -790,6 +805,27 @@ const RichTextEditor = ({
                 {t("aiPolish")}
               </Button>
             )
+          )}
+          {bodyTitleMode && onToggleBodyTitleMode && (
+            // 正文块小标题的排版：标题独占一行 / 标题与正文同一行
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              aria-pressed={bodyTitleMode === "inline"}
+              aria-label={bodyTitleMode === "inline" ? t("bodySectionLayoutStackedHint") : t("bodySectionLayoutInlineHint")}
+              title={bodyTitleMode === "inline" ? t("bodySectionLayoutStackedHint") : t("bodySectionLayoutInlineHint")}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleBodyTitleMode();
+              }}
+              className="h-8 gap-1.5 px-3 text-xs ml-1"
+            >
+              {bodyTitleMode === "inline" ? <CornerDownLeft className="h-3.5 w-3.5" /> : <ArrowRightToLine className="h-3.5 w-3.5" />}
+              {bodyTitleMode === "inline" ? t("bodySectionLayoutStacked") : t("bodySectionLayoutInline")}
+            </Button>
           )}
         </div>
       </div>

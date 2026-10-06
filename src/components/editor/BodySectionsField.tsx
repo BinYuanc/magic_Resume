@@ -1,0 +1,130 @@
+import { useEffect, useRef, useState } from "react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
+import Field from "./Field";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useTranslations } from "@/i18n/compat/client";
+import { normalizeRichTextContent } from "@/lib/richText";
+
+/** 正文块：标题 + 正文。inline = 标题与正文同一行（标题后不换行）。 */
+type BodySection = { id: string; title: string; content: string; inline: boolean };
+const escapeText = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const newSection = (title = "", content = "", inline = false): BodySection => ({ id: crypto.randomUUID(), title, content, inline });
+/** 「标题与正文同行」标记写在 h3 上，预览/PDF/Word 共用；不增加简历数据字段。 */
+const INLINE_ATTRIBUTE = "data-body-inline";
+
+/** 仍存为原有 HTML 正文；h3 划分标题与对应内容，不增加简历数据字段。 */
+function parseSections(html: string): BodySection[] {
+  if (typeof DOMParser === "undefined") return [{ id: "initial", title: "", content: html, inline: false }];
+  const doc = new DOMParser().parseFromString(normalizeRichTextContent(html), "text/html");
+  const sections: BodySection[] = [];
+  let current = newSection();
+  for (const node of Array.from(doc.body.childNodes)) {
+    if (node.nodeType === 1 && (node as Element).tagName === "H3") {
+      if (current.content || current.title || sections.length) sections.push(current);
+      current = newSection(node.textContent ?? "", "", (node as Element).getAttribute(INLINE_ATTRIBUTE) === "1");
+    } else {
+      current.content += node.nodeType === 1 ? (node as Element).outerHTML : escapeText(node.textContent ?? "");
+    }
+  }
+  sections.push(current);
+  return sections;
+}
+function serializeSections(sections: BodySection[]) {
+  return sections.map((section, index) => {
+    if (!section.title && index === 0) return section.content;
+    const attribute = section.inline ? ` ${INLINE_ATTRIBUTE}="1"` : "";
+    return `<h3${attribute}>${escapeText(section.title)}</h3>${section.content}`;
+  }).join("");
+}
+
+export default function BodySectionsField({ label, value, onChange, placeholder }: {
+  label: string; value: string; onChange: (value: string) => void; placeholder?: string;
+}) {
+  const t = useTranslations("richEditor");
+  // 服务端和首次客户端渲染一致，挂载后再解析正文。
+  const [sections, setSections] = useState<BodySection[]>([{ id: "initial", title: "", content: value, inline: false }]);
+  const [adding, setAdding] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
+  /** 收起的正文块（只显示标题行） */
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const lastHtml = useRef<string | null>(null);
+  const sectionsRef = useRef(sections);
+  useEffect(() => {
+    if (value === lastHtml.current) return;
+    const next = parseSections(value);
+    sectionsRef.current = next;
+    setSections(next);
+    lastHtml.current = value;
+  }, [value]);
+  const commit = (next: BodySection[]) => {
+    sectionsRef.current = next;
+    setSections(next);
+    const html = serializeSections(next);
+    lastHtml.current = html;
+    onChange(html);
+  };
+  const update = (id: string, patch: Partial<BodySection>) => commit(sectionsRef.current.map(section => section.id === id ? { ...section, ...patch } : section));
+  const add = (title = "") => {
+    commit([...sectionsRef.current, newSection(title)]);
+    setAdding(false);
+  };
+  const move = (id: string, direction: number) => {
+    const next = [...sectionsRef.current];
+    const index = next.findIndex(section => section.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    commit(next);
+  };
+  const toggleCollapsed = (id: string) => setCollapsed(previous => ({ ...previous, [id]: !previous[id] }));
+  return <div className="space-y-3">
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <span className="text-sm font-medium">{label}</span>
+      <Popover open={adding} onOpenChange={setAdding}>
+        <PopoverTrigger asChild><Button type="button" variant="outline" size="sm" className="gap-1 text-xs"><Plus className="h-4 w-4" />{t("addBodySection")}</Button></PopoverTrigger>
+        <PopoverContent className="w-72 space-y-2" align="end">
+          <Button type="button" className="w-full" onClick={() => add()}>{t("addCustomBodySection")}</Button>
+          <p className="text-xs text-muted-foreground">{t("bodySectionHint")}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {["headingOwner", "headingOverview", "headingTech", "headingChallenges", "headingResults"].map(key => <Button key={key} type="button" variant="outline" size="sm" className="h-auto whitespace-normal px-2 py-1 text-xs" onClick={() => add(t(key))}>{t(key)}</Button>)}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+    {sections.map((section, index) => {
+      const isCollapsed = Boolean(collapsed[section.id]);
+      return <div key={section.id} className="space-y-2 rounded-lg border bg-background/40 p-3">
+        <div className="flex items-center gap-1">
+          <Input value={section.title} onChange={event => update(section.id, { title: event.target.value })}
+            placeholder={t("bodySectionTitlePlaceholder")} aria-label={t("bodySectionTitle", { number: index + 1 })} className="min-w-0 flex-1 font-medium" />
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-7 shrink-0"
+            title={isCollapsed ? t("bodySectionExpand") : t("bodySectionCollapse")}
+            aria-label={isCollapsed ? t("bodySectionExpand") : t("bodySectionCollapse")}
+            aria-expanded={!isCollapsed}
+            onClick={() => toggleCollapsed(section.id)}>
+            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-7 shrink-0" disabled={index === 0} title={t("bodySectionUp")} aria-label={t("bodySectionUp")} onClick={() => move(section.id, -1)}><ArrowUp className="h-4 w-4" /></Button>
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-7 shrink-0" disabled={index === sections.length - 1} title={t("bodySectionDown")} aria-label={t("bodySectionDown")} onClick={() => move(section.id, 1)}><ArrowDown className="h-4 w-4" /></Button>
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-7 shrink-0 text-destructive" title={t("deleteBodySection")} aria-label={t("deleteBodySection")} onClick={() => setRemoving(section.id)}><Trash2 className="h-4 w-4" /></Button>
+        </div>
+        {!isCollapsed && <Field type="editor" value={section.content} onChange={content => update(section.id, { content })} placeholder={placeholder}
+          bodyTitleMode={section.inline ? "inline" : "stacked"}
+          onToggleBodyTitleMode={() => update(section.id, { inline: !section.inline })} />}
+      </div>;
+    })}
+    <AlertDialog open={Boolean(removing)} onOpenChange={open => { if (!open) setRemoving(null); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader><AlertDialogTitle>{t("deleteBodySection")}</AlertDialogTitle><AlertDialogDescription>{t("deleteBodySectionHint")}</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogFooter><AlertDialogCancel>{t("bodySectionCancel")}</AlertDialogCancel><AlertDialogAction onClick={() => {
+          const next = sectionsRef.current.filter(section => section.id !== removing);
+          commit(next.length ? next : [newSection()]);
+          setRemoving(null);
+        }}>{t("deleteBodySection")}</AlertDialogAction></AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </div>;
+}
