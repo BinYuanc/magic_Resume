@@ -195,6 +195,7 @@ const SaveAsTemplateDialog: React.FC<SaveAsTemplateDialogProps> = ({
             </div>
           </div>
 
+          <p className="text-xs text-muted-foreground">{t("exactLayoutNote")}</p>
           <p className="text-xs text-muted-foreground">{t("privacyNote")}</p>
         </div>
 

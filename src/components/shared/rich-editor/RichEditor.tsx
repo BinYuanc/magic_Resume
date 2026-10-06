@@ -55,6 +55,7 @@ import type {
 import { plainTextToParagraphs, sanitizePastedHtml } from "@/lib/pasteSanitize";
 import AIOptimizeMenu from "../ai/AIOptimizeMenu";
 import { BetterSpace } from "./BetterSpace";
+import { ResumeSectionHeading } from "./ResumeSectionHeading";
 import { Indent } from "./Indent";
 import IndentControls from "./IndentControls";
 import { toast } from "sonner";
@@ -490,6 +491,7 @@ const RichTextEditor = ({
           levels: [1, 2, 3],
         },
       }),
+      ResumeSectionHeading,
       ListKit.configure({
         bulletList: {},
         orderedList: {},
@@ -499,7 +501,7 @@ const RichTextEditor = ({
         taskList: false,
       }),
       TextAlign.configure({
-        types: ["heading", "paragraph"],
+        types: ["heading", "resumeSectionHeading", "paragraph"],
         alignments: ["left", "center", "right", "justify"],
       }),
       TextStyle,

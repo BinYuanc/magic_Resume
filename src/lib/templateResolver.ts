@@ -19,7 +19,7 @@ import type {
  * 时间轴 / 大背景 / 自由定位类模板无法 1:1 映射到 DOCX 段落模型，
  * 标记为 basic，导出时走简化布局并提示用户，而不是硬凑一个不可编辑的伪 Word。
  */
-const BASIC_DOCX_TEMPLATES = new Set(["classic", "modern", "left-right", "timeline", "minimalist", "elegant", "creative", "editorial", "swiss"]);
+const FULL_DOCX_TEMPLATES = new Set(["classic", "minimalist"]);
 
 /** 内置模板 config（ResumeTemplate）→ 统一 TemplateDefinition */
 export function builtinToDefinition(config: ResumeTemplate): TemplateDefinition {
@@ -28,9 +28,9 @@ export function builtinToDefinition(config: ResumeTemplate): TemplateDefinition 
     name: config.name,
     description: config.description,
     source: "builtin-react",
-    docxCapability: (BASIC_DOCX_TEMPLATES.has(config.id)
-      ? "basic"
-      : "full") as DocxCapability,
+    docxCapability: (FULL_DOCX_TEMPLATES.has(config.id)
+      ? "full"
+      : "basic") as DocxCapability,
     layout: {
       layout: config.layout === "left-right" ? "two-column" : "single-column",
       order: ["basic", "summary", "skills", "experience", "projects", "education", "certificates", "custom"],
@@ -38,14 +38,14 @@ export function builtinToDefinition(config: ResumeTemplate): TemplateDefinition 
       // 全部用可选链：内置 config 数据不全时不能让整条渲染链崩掉
       pagePadding: config.spacing?.contentPadding,
     },
-    typography: {},
+    typography: { baseFontSize: 16, headerSize: 18, subheaderSize: 16, lineHeight: 1.5 },
     spacing: {
       sectionGap: config.spacing?.sectionGap,
       itemGap: config.spacing?.itemGap,
       contentPadding: config.spacing?.contentPadding,
     },
     colors: { ...(config.colorScheme ?? {}) },
-    sectionStyles: {},
+    sectionStyles: { default: { border: config.id === "classic" } },
     builtinLayout: config.layout,
   };
 }

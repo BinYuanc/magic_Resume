@@ -18,7 +18,7 @@ export function selectedIndentBlocks(state: Editor["state"]) {
       }
     }
     const node = resolved.parent;
-    if (["paragraph", "heading"].includes(node.type.name)) {
+    if (["paragraph", "heading", "resumeSectionHeading"].includes(node.type.name)) {
       blocks.set(resolved.before(), normalizeIndent(node.attrs.indent));
     }
   };
@@ -42,7 +42,7 @@ declare module "@tiptap/core" {
 export const Indent = Extension.create({
   name: "indent",
   addGlobalAttributes() {
-    return [{ types: ["paragraph", "heading", "listItem"], attributes: {
+    return [{ types: ["paragraph", "heading", "resumeSectionHeading", "listItem"], attributes: {
       indent: {
         default: 0,
         parseHTML: (element) => normalizeIndent(element.getAttribute("data-indent")),

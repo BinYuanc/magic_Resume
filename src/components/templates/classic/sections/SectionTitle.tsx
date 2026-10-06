@@ -30,6 +30,7 @@ const SectionTitle = ({ type, title, globalSettings, showTitle = true }: Section
                 fontSize: `${sectionStyle?.fontSize ?? globalSettings?.headerSize ?? 18}px`,
                 color: themeColor,
                 borderColor: themeColor,
+                borderBottom: sectionStyle?.border === false ? "none" : undefined,
                 marginBottom: `${sectionStyle?.itemSpacing ?? globalSettings?.paragraphSpacing ?? 0}px`,
                 fontWeight: sectionStyle?.fontWeight,
                 textAlign: sectionStyle?.align,

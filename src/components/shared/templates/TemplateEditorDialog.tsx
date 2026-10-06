@@ -80,7 +80,10 @@ const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
 
   const patchLayout = (partial: Partial<TemplateDefinition["layout"]>) => {
     setDraft((current) =>
-      current ? { ...current, layout: { ...current.layout, ...partial } } : current
+      current ? { ...current, layout: { ...current.layout, ...partial },
+        ...(["layout","columns","columnAssignment"].some(key=>Object.hasOwn(partial,key)) && current.savedPresentation?.renderer ? {
+          builtinLayout: undefined, savedPresentation: { ...current.savedPresentation, renderer: undefined },
+        } : {}) } : current
     );
   };
 

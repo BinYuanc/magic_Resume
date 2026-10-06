@@ -39,6 +39,10 @@ export interface DocxRun {
 
 export interface DocxParagraph {
   runs: DocxRun[];
+  /** 可编辑布局表格，正文仍是 Word 段落与文字。 */
+  table?: { widths: number[]; rows: { paragraphs: DocxParagraph[] }[][] };
+  keepNext?: boolean;
+  keepLines?: boolean;
   /** 挂到哪个编号实例（bullet / ordered 共用 numbering 机制） */
   numId?: number;
   /** 段前 / 段后间距（px） */
@@ -136,10 +140,14 @@ function collectRuns(node: Node, ctx: WalkContext, output: DocxRun[]): void {
       return;
     }
   }
-  if (tag === "span") {
+  {
     const inline = parseInlineStyle(element);
     if (inline.color) next.color = inline.color;
     if (inline.fontSize) next.fontSize = inline.fontSize;
+    const css = element.getAttribute("style") ?? "";
+    if (/font-weight\s*:\s*(bold|[6-9]00)/i.test(css)) next.bold = true;
+    if (/font-style\s*:\s*italic/i.test(css)) next.italic = true;
+    if (/text-decoration[^:]*:\s*[^;]*underline/i.test(css)) next.underline = true;
   }
 
   for (const child of Array.from(element.childNodes)) {
@@ -193,19 +201,31 @@ export function richTextToDocxParagraphs(
     paragraphs.push(paragraph);
   };
 
-  const walkBlock = (node: Node, numId?: number): void => {
+  const walkBlock = (node: Node, numId?: number, inherited: Partial<DocxRun> = {}): void => {
     if (node.nodeType === Node.TEXT_NODE) {
-      if (node.textContent?.trim()) paragraphs.push({ runs: [{ text: node.textContent, fontSize: defaults?.fontSize, color: defaults?.color, fontFamily: defaults?.fontFamily }], spacingAfter: defaults?.paragraphSpacing });
+      if (node.textContent?.trim()) paragraphs.push({ runs: [{ text: node.textContent, fontSize: inherited.fontSize ?? defaults?.fontSize, color: inherited.color ?? defaults?.color, fontFamily: defaults?.fontFamily }], spacingAfter: defaults?.paragraphSpacing });
       return;
     }
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     const element = node as Element;
     const tag = element.tagName.toLowerCase();
 
-    if (tag === "p" || tag === "h3") {
-      const isHeading = tag === "h3";
+    const inheritedStyle = { ...inherited, ...Object.fromEntries(Object.entries(parseInlineStyle(element)).filter(([,v])=>v !== undefined)) };
+    if (["div","blockquote","section"].includes(tag)) {
+      const before = paragraphs.length;
+      for (const child of Array.from(element.childNodes)) walkBlock(child,numId,inheritedStyle);
+      const css = element.getAttribute("style") ?? "";
+      for (const p of paragraphs.slice(before)) for (const run of p.runs) {
+        if (/font-weight\s*:\s*(bold|[6-9]00)/i.test(css)) run.bold = run.bold ?? true;
+        if (/font-style\s*:\s*italic/i.test(css)) run.italic = run.italic ?? true;
+        if (/text-decoration[^:]*:\s*[^;]*underline/i.test(css)) run.underline = run.underline ?? true;
+      }
+      return;
+    }
+    if (["p","h1","h2","h3"].includes(tag)) {
+      const isHeading = /^h[123]$/.test(tag);
       if (isHeading && !element.textContent?.trim()) return;
-      const headingSize = Math.round((defaults?.fontSize ?? 14) * 1.08);
+      const headingSize = Math.round((inheritedStyle.fontSize ?? defaults?.fontSize ?? 14) * (tag === "h1" ? 1.5 : tag === "h2" ? 1.25 : 1.08));
       const runs: DocxRun[] = [];
       collectRuns(
         element,
@@ -213,8 +233,8 @@ export function richTextToDocxParagraphs(
           bold: isHeading,
           italic: false,
           underline: false,
-          fontSize: isHeading ? headingSize : defaults?.fontSize,
-          color: defaults?.color,
+          fontSize: isHeading ? headingSize : inheritedStyle.fontSize ?? defaults?.fontSize,
+          color: inheritedStyle.color ?? defaults?.color,
           fontFamily: defaults?.fontFamily,
         },
         runs
@@ -227,7 +247,9 @@ export function richTextToDocxParagraphs(
         runs,
         numId,
         indentCharacters: readIndent(element),
-        spacingBefore: isHeading ? headingSize * 0.8 : undefined,
+        keepNext: isHeading,
+        lineHeight: isHeading ? 1.5 : undefined,
+        spacingBefore: isHeading ? (paragraphs.length ? headingSize * 0.8 : 0) : undefined,
         spacingAfter: isHeading ? headingSize * 0.3 : defaults?.paragraphSpacing,
         align: /text-align\s*:\s*(center|right)/i.exec(element.getAttribute("style") ?? "")?.[1]?.toLowerCase() as DocxParagraph["align"],
       });
@@ -242,9 +264,9 @@ export function richTextToDocxParagraphs(
         // li 里的直接内容 + 嵌套 p 都摊平为挂编号的段落
         for (const child of Array.from(li.childNodes)) {
           if (child.nodeType === Node.ELEMENT_NODE && ["ul", "ol"].includes((child as Element).tagName.toLowerCase())) {
-            walkBlock(child, undefined); // 嵌套列表：V1 不做二级编号，退化为普通列表
+            walkBlock(child, undefined, inheritedStyle); // 嵌套列表：V1 不做二级编号，退化为普通列表
           } else if (child.nodeType === Node.ELEMENT_NODE && (child as Element).tagName.toLowerCase() === "p") {
-            walkBlock(child, listNumId);
+            walkBlock(child, listNumId, inheritedStyle);
           } else if (child.nodeType === Node.TEXT_NODE && (child.textContent ?? "").trim()) {
             const runs: DocxRun[] = [];
             collectRuns(
@@ -253,8 +275,8 @@ export function richTextToDocxParagraphs(
                 bold: false,
                 italic: false,
                 underline: false,
-                fontSize: defaults?.fontSize,
-                color: defaults?.color,
+                fontSize: inheritedStyle.fontSize ?? defaults?.fontSize,
+                color: inheritedStyle.color ?? defaults?.color,
                 fontFamily: defaults?.fontFamily,
               },
               runs
@@ -278,8 +300,8 @@ export function richTextToDocxParagraphs(
         bold: false,
         italic: false,
         underline: false,
-        fontSize: defaults?.fontSize,
-        color: defaults?.color,
+        fontSize: inheritedStyle.fontSize ?? defaults?.fontSize,
+        color: inheritedStyle.color ?? defaults?.color,
         fontFamily: defaults?.fontFamily,
       },
       runs

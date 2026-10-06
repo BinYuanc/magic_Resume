@@ -29,7 +29,7 @@ test("MCP stdio 初始化、工具发现、未连接提示、参数限制", asyn
     assert.equal(init.result.protocolVersion, "2025-06-18");
     assert.ok(init.result.capabilities.tools);
     const list = await client.rpc("tools/list");
-    assert.equal(list.result.tools.length, 14);
+    assert.equal(list.result.tools.length, 21);
     assert.ok(list.result.tools.find((tool) => tool.name === "create_template"));
     assert.equal((await call(client, "list_resumes")).result.isError, true);
     assert.equal((await call(client, "update_resume", { resumeId: "x", patch: {} })).result.isError, true);

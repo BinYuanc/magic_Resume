@@ -1,3 +1,4 @@
+import { readResumeSettings } from "@/lib/readResumeSettings";
 import { useEffect, useMemo, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { useTranslations } from "@/i18n/compat/client";
@@ -53,7 +54,7 @@ function useDefaultBodyFontSize(): number {
   const activeResume = useResumeStore((state) => state.activeResume);
   const customTemplates = useCustomTemplateStore((state) => state.templates);
   const templateId = activeResume?.templateId;
-  const legacyBase = activeResume?.globalSettings?.baseFontSize;
+  const legacyBase = readResumeSettings(activeResume)?.baseFontSize;
   const overrideBase = activeResume?.styleOverrides?.global?.baseFontSize;
   return useMemo(() => {
     const definition = resolveTemplateDefinition(templateId, customTemplates);

@@ -5,9 +5,9 @@
  * - ResumeData 存内容；TemplateDefinition 存模板默认展示规则；这里存 **用户主动做的排版调整**。
  * - 正因为把「用户覆盖」和「模板默认」拆开，切换模板时才有得选：
  *     保留我的排版调整  → StyleOverrides 不动
- *     使用模板默认排版  → 只清 StyleOverrides / 重置 globalSettings，绝不碰 ResumeData 内容
+ *     使用模板默认排版  → 只清 StyleOverrides / 更新展示开关，绝不碰 ResumeData 内容
  *
- * 所有字段一律可选：老简历没有这个字段时 = 用户没做过任何覆盖，完全走模板默认。
+ * 所有字段一律可选：旧简历读取时由 styleMigration 将旧 globalSettings 样式迁入；新简历空覆盖走模板默认。
  */
 import type { TemplateSectionStyle } from "./templateDefinition";
 

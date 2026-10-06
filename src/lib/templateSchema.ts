@@ -10,6 +10,7 @@ const RESERVED_CONTENT_KEYS = new Set([
   "selfEvaluationContent",
 ]);
 import { colorToHex } from "./color";
+import { buildTemplateExample, SAVED_RENDERERS } from "./templateExample";
 
 /**
  * 自定义模板 Schema 校验 + 安全检查 + 包转换。
@@ -391,6 +392,10 @@ export function parseTemplatePackage(input: TemplatePackageInput): TemplateDefin
     previewImage = `data:${mime};base64,${btoa(binary)}`;
   }
 
+  const savedPresentation = isPlainObject(themeRaw.savedPresentation) && themeRaw.savedPresentation.version === 1 && isPlainObject(themeRaw.savedPresentation.example)
+      ? buildTemplateExample(themeRaw.savedPresentation.example as unknown as import("@/types/resume").ResumeData,
+          typeof themeRaw.savedPresentation.renderer === "string" && SAVED_RENDERERS.includes(themeRaw.savedPresentation.renderer) ? themeRaw.savedPresentation.renderer : undefined)
+      : undefined;
   const definition: TemplateDefinition = {
     id,
     name,
@@ -398,7 +403,7 @@ export function parseTemplatePackage(input: TemplatePackageInput): TemplateDefin
     category,
     tags,
     source: "custom-schema",
-    docxCapability: layout.layout === "single-column" ? "full" : "basic",
+    docxCapability: savedPresentation?.renderer ? (["classic", "minimalist"].includes(savedPresentation.renderer) ? "full" : "basic") : layout.layout === "single-column" ? "full" : "basic",
     layout,
     typography,
     spacing: {
@@ -410,6 +415,8 @@ export function parseTemplatePackage(input: TemplatePackageInput): TemplateDefin
     },
     colors: optionalColors(themeRaw, "theme.json") ?? {},
     sectionStyles: sanitizeSectionStyles(themeRaw.sectionStyles),
+    savedPresentation,
+    builtinLayout: isPlainObject(themeRaw.savedPresentation) && typeof themeRaw.savedPresentation.renderer === "string" && SAVED_RENDERERS.includes(themeRaw.savedPresentation.renderer) ? themeRaw.savedPresentation.renderer : undefined,
     previewImage,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -529,6 +536,7 @@ export function buildTemplatePackage(
     colors: definition.colors,
     spacing: definition.spacing,
     sectionStyles: definition.sectionStyles,
+    savedPresentation: definition.savedPresentation,
   };
   return { manifest, layout, theme, preview: definition.previewImage };
 }

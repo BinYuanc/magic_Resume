@@ -6,41 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useTranslations } from "@/i18n/compat/client";
-import { normalizeRichTextContent } from "@/lib/richText";
 
-/** 正文块：标题 + 正文。inline = 标题与正文同一行（标题后不换行）。 */
-type BodySection = { id: string; title: string; content: string; inline: boolean };
-const escapeText = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-const newSection = (title = "", content = "", inline = false): BodySection => ({ id: crypto.randomUUID(), title, content, inline });
-/** 「标题与正文同行」标记写在 h3 上，预览/PDF/Word 共用；不增加简历数据字段。 */
-const INLINE_ATTRIBUTE = "data-body-inline";
-/** 一键收起/展开的「上次选择」记在本地，下次打开沿用 */
+import { parseBodySections as parseSections, serializeBodySections as serializeSections, newBodySection as newSection, type BodySection } from "@/lib/bodySections";
 const COLLAPSED_STORAGE_KEY = "magic-resume:body-section-collapsed";
-
-/** 仍存为原有 HTML 正文；h3 划分标题与对应内容，不增加简历数据字段。 */
-function parseSections(html: string): BodySection[] {
-  if (typeof DOMParser === "undefined") return [{ id: "initial", title: "", content: html, inline: false }];
-  const doc = new DOMParser().parseFromString(normalizeRichTextContent(html), "text/html");
-  const sections: BodySection[] = [];
-  let current = newSection();
-  for (const node of Array.from(doc.body.childNodes)) {
-    if (node.nodeType === 1 && (node as Element).tagName === "H3") {
-      if (current.content || current.title || sections.length) sections.push(current);
-      current = newSection(node.textContent ?? "", "", (node as Element).getAttribute(INLINE_ATTRIBUTE) === "1");
-    } else {
-      current.content += node.nodeType === 1 ? (node as Element).outerHTML : escapeText(node.textContent ?? "");
-    }
-  }
-  sections.push(current);
-  return sections;
-}
-function serializeSections(sections: BodySection[]) {
-  return sections.map((section, index) => {
-    if (!section.title && index === 0) return section.content;
-    const attribute = section.inline ? ` ${INLINE_ATTRIBUTE}="1"` : "";
-    return `<h3${attribute}>${escapeText(section.title)}</h3>${section.content}`;
-  }).join("");
-}
 
 export default function BodySectionsField({ label, value, onChange, placeholder }: {
   label: string; value: string; onChange: (value: string) => void; placeholder?: string;

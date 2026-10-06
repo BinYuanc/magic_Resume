@@ -1,3 +1,4 @@
+import { readResumeSettings } from "@/lib/readResumeSettings";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/store/useResumeStore";
@@ -28,7 +29,7 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, onSave }) => {
   const t = useTranslations("workbench.projectItem");
   // 三级样式体系的全局层：局部样式缺失时回退到 subheaderSize
   const globalSettings = useResumeStore(
-    (state) => state.activeResume?.globalSettings
+    (state) => readResumeSettings(state.activeResume)
   );
   const inheritedFontSize = globalSettings?.subheaderSize ?? 16;
 

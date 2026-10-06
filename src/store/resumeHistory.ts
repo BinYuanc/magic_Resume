@@ -1,3 +1,4 @@
+import { useCustomTemplateStore } from "./useCustomTemplateStore";
 import { DEFAULT_TEMPLATES } from "@/config";
 import type { ResumeData } from "../types/resume";
 
@@ -78,14 +79,15 @@ const getRestoredTemplateId = (
   snapshot: ResumeData,
   currentResume: ResumeData
 ) => {
-  const snapshotTemplateExists = DEFAULT_TEMPLATES.some(
+  const available = [...DEFAULT_TEMPLATES, ...useCustomTemplateStore.getState().templates];
+  const snapshotTemplateExists = available.some(
     (template) => template.id === snapshot.templateId
   );
   if (snapshotTemplateExists) {
     return snapshot.templateId;
   }
 
-  const currentTemplateExists = DEFAULT_TEMPLATES.some(
+  const currentTemplateExists = available.some(
     (template) => template.id === currentResume.templateId
   );
   if (currentTemplateExists) {
@@ -120,7 +122,7 @@ export const restoreResumeSnapshot = (
 ): ResumeData => ({
   ...cloneResume(snapshot),
   templateId: getRestoredTemplateId(snapshot, currentResume),
-  updatedAt: new Date().toISOString(),
+  updatedAt: new Date(Math.max(Date.now(), (Date.parse(currentResume.updatedAt) || 0) + 1)).toISOString(),
   activeSection: getRestoredActiveSection(snapshot, currentResume),
   draggingProjectId: currentResume.draggingProjectId,
 });

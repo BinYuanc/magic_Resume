@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { useMcpBridge } from "./McpBridge";
 import { toast } from "sonner";
 
-const command = 'codex mcp add magic-resume -- node "D:\\FileInstalled\\magic_resume\\magic-resume\\mcp\\server.mjs"';
-const config = `[mcp_servers.magic-resume]\ncommand = "node"\nargs = ['D:\\FileInstalled\\magic_resume\\magic-resume\\mcp\\server.mjs']\nstartup_timeout_sec = 10\ntool_timeout_sec = 60`;
+const command = "node scripts/setup-mcp.mjs";
+const config = "node scripts/setup-mcp.mjs --print";
 export function McpDocsButton() {
   const [url, setUrl] = useState("http://127.0.0.1:43127");
   const [token, setToken] = useState("");
@@ -19,16 +19,16 @@ export function McpDocsButton() {
     <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
       <DialogHeader><DialogTitle>用 Codex 直接编辑魔方简历</DialogTitle><DialogDescription>本地 MCP 配置、网页配对和截图模板使用说明</DialogDescription></DialogHeader>
       <div className="space-y-5 text-sm leading-6">
-        <p>连接后，Codex 可以读写简历、调整字号与缩进，并根据你发给它的参考截图创建自定义模板。修改同步到网页，可在工作台撤销；模板进入“我的模板”，直接选择即可使用。</p>
+        <p>连接后，Codex 可以读写简历、调整字号与缩进，并根据你发给它的参考截图创建自定义模板。可按条目和正文块精细编辑、读取最终样式并检查工作台页数。修改同步到网页，可在工作台撤销与重做；模板进入“我的模板”，直接选择即可使用。</p>
         <div className="rounded-lg border p-4 space-y-3">
           <h3 className="font-semibold">1. 在 Codex 中添加本地 MCP</h3>
-          <p>保持本地魔方简历运行（默认 localhost:3000）。在终端执行以下命令，然后重启 Codex，或重新打开聊天让工具生效：</p>
+          <p>保持本地魔方简历运行（默认 localhost:3000）。在项目根目录打开终端，执行以下命令（或 pnpm mcp:install），然后重启 Codex，或重新打开聊天让工具生效：</p>
           <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">{command}</pre>
           <Button size="sm" variant="outline" onClick={() => void copy(command)}><Copy className="mr-2 h-3 w-3" />复制命令</Button>
           <details><summary className="cursor-pointer">也可以手动添加到 Codex 的 config.toml</summary>
-            <p className="mt-2">配置位于 %USERPROFILE%\.codex\config.toml。若 node 不在 PATH，将 command 改为 node.exe 完整路径；项目移动后更新 args。</p>
+            <p className="mt-2">运行下面的命令生成当前目录对应的配置，再添加到 Codex 的 MCP 设置或 config.toml。脚本自动使用当前 Node 的完整路径；项目移动后重新运行安装命令。</p>
             <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">{config}</pre>
-            <Button size="sm" variant="outline" onClick={() => void copy(config)}>复制配置</Button>
+            <Button size="sm" variant="outline" onClick={() => void copy(config)}>复制生成命令</Button>
           </details>
         </div>
         <div className="rounded-lg border p-4 space-y-3">
@@ -51,7 +51,7 @@ export function McpDocsButton() {
             <li>“把当前排版保存为模板，名称叫蓝色技术简历。”</li>
           </ul>
         </div>
-        <p className="text-muted-foreground">模板支持单栏/双栏、模块顺序与栏位、字体与字号、纯色背景、标题颜色与分隔线、对齐和间距。复杂图形、装饰、多层表格无法保证逐像素复刻；可让 Codex 根据预览继续微调。双栏 Word 导出为简化布局。</p>
+        <p className="text-muted-foreground">模板支持单栏/双栏、模块顺序与栏位、字体与字号、纯色背景、标题颜色与分隔线、对齐和间距。复杂图形、装饰、多层表格无法保证逐像素复刻；可让 Codex 根据预览继续微调。经典与极简 Word 支持可编辑分栏页头和条目；图标、圆角等装饰仍提示简化，双栏 Word 导出为简化布局。</p>
         <p className="text-muted-foreground">连接失败：确认 Codex MCP 已启动、重新获取配对码、使用返回的实际端口（端口占用时会自动更换）。自定义网页端口需要为 MCP 配置 MAGIC_RESUME_ORIGINS。网页版 ChatGPT 接入不属于此本地版。</p>
         <a className="underline" href="/docs/mcp-local.md" target="_blank" rel="noreferrer">打开完整 MCP 接入文档</a>
       </div>

@@ -32,7 +32,7 @@ const ResumeTemplateComponent: React.FC<TemplateProps> = ({
     (entry) => entry.id === template.id
   );
 
-  const TemplateComponent = getTemplateComponent(template.layout);
+  const TemplateComponent = getTemplateComponent(customTemplate?.savedPresentation?.renderer ?? template.layout);
   const definition = customTemplate ?? builtinToDefinition(template);
   const style = resolveResumeStyle(definition, data.styleOverrides, data.globalSettings);
   // 模块样式同时挂「当前 id」「canonical id」「legacy id」三把钥匙：
@@ -47,14 +47,14 @@ const ResumeTemplateComponent: React.FC<TemplateProps> = ({
 
   return (
     <TemplateProvider templateId={template.id} menuSections={data.menuSections} sectionStyles={sectionStyles}>
-      {customTemplate ? (
+      {customTemplate && !customTemplate.savedPresentation?.renderer ? (
         <SchemaTemplateRenderer
           data={data}
           template={customTemplate}
           overrides={data.styleOverrides}
         />
       ) : (
-        <TemplateComponent data={resolveLegacyResumeData(data, builtinToDefinition(template))} template={template} />
+        <TemplateComponent data={resolveLegacyResumeData(data, definition)} template={template} />
       )}
     </TemplateProvider>
   );

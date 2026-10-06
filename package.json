@@ -6,7 +6,7 @@
   "packageManager": "pnpm@10.3.0",
   "scripts": {
     "mcp": "node mcp/server.mjs",
-    "test:mcp": "node --test tests/mcp-server.test.mjs",
+    "test:mcp": "node --test tests/mcp-server.test.mjs tests/mcp-install.test.mjs",
     "dev": "vite dev",
     "test:ai": "tsx --test tests/*.test.ts",
     "test:ai-models": "tsx --test tests/ai-models.browser.ts",
@@ -14,7 +14,7 @@
     "test:preview": "node --test tests/preview.browser.mjs",
     "test:font-size": "tsx tests/font-size.browser.ts",
     "test:mobile": "tsx --test tests/mobile-workbench.browser.ts",
-    "build": "vite build",
+    "build": "node scripts/build-local.mjs",
     "start": "node server.mjs",
     "preview": "vite preview",
     "release": "bumpp",
@@ -23,8 +23,11 @@
     "test:typography": "tsx --test tests/typography.test.ts",
     "test:template": "tsx --test tests/template-system.test.ts",
     "test:template-regressions": "tsx --test tests/template-regressions.test.tsx",
-    "test:templates": "tsx --test tests/template-system.test.ts tests/template-regressions.test.tsx tests/typography.test.ts tests/docx-export.test.ts",
-    "test:docx": "tsx --test tests/docx-export.test.ts"
+    "test:templates": "tsx --test tests/template-system.test.ts tests/template-regressions.test.tsx tests/typography.test.ts tests/docx-export.test.ts tests/template-example.test.ts tests/architecture.test.ts",
+    "test:docx": "tsx --test tests/docx-export.test.ts",
+    "mcp:install": "node scripts/setup-mcp.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "test:architecture": "tsx --test tests/architecture.test.ts tests/template-example.test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

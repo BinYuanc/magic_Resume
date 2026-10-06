@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "target": "ES2022"
+  },
+  "exclude": [
+    "node_modules",
+    "src/app/(public)/[locale]/layout.tsx",
+    "src/app/api/grammar/route.ts",
+    "src/app/api/polish/route.ts",
+    "src/app/api/proxy/image/route.ts",
+    "src/app/app/dashboard/layout.tsx",
+    "src/app/app/page.tsx",
+    "src/app/app/workbench/layout.tsx",
+    "src/app/layout.tsx",
+    "src/app/manifest.ts",
+    "src/app/sitemap.ts",
+    "src/components/Document.tsx",
+    "src/components/shared/UpdateLocale.tsx",
+    "src/i18n/db.ts",
+    "src/i18n/request.ts",
+    "src/middleware.ts"
+  ]
+}

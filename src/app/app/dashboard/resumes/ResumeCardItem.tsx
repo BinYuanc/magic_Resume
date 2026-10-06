@@ -1,3 +1,4 @@
+import { readResumeSettings } from "@/lib/readResumeSettings";
 import React from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -102,8 +103,8 @@ export const ResumeCardItem = ({
                                     height: "297mm",
                                     transform: `scale(${scale})`,
                                     transformOrigin: "top left",
-                                    padding: `${resume.globalSettings?.pagePadding || 32}px`,
-                                    fontFamily: normalizeFontFamily(resume.globalSettings?.fontFamily),
+                                    padding: `${readResumeSettings(resume).pagePadding || 32}px`,
+                                    fontFamily: normalizeFontFamily(readResumeSettings(resume).fontFamily),
                                 }}
                             >
                                 <ResumeTemplateComponent data={resume as any} template={activeTemplate} />

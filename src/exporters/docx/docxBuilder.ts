@@ -96,6 +96,8 @@ function paragraphXml(
 
   // 段落属性
   const pPrParts: string[] = [];
+  if (paragraph.keepNext) pPrParts.push("<w:keepNext/>");
+  if (paragraph.keepLines) pPrParts.push("<w:keepLines/>");
   if (paragraph.numId !== undefined) {
     pPrParts.push(
       `<w:numPr><w:ilvl w:val="0"/><w:numId w:val="${paragraph.numId}"/></w:numPr>`
@@ -140,6 +142,20 @@ function paragraphXml(
     }
   }
   return `<w:p>${parts.join("")}</w:p>`;
+}
+
+/** 固定栏宽、无边框、零 cell padding。每个单元格以合法段落结束。 */
+function blockXml(p: DocxParagraph, options: DocxBuildOptions, relIds: Map<string, string>, images: Map<DocxImage, number>): string {
+  if (!p.table) return paragraphXml(p, options, relIds, images);
+  const widths = p.table.widths.map(pxToTwips);
+  const grid = widths.map(width => `<w:gridCol w:w="${width}"/>`).join("");
+  const rows = p.table.rows.map(row => `<w:tr><w:trPr><w:cantSplit/></w:trPr>${row.map((cell, i) => `<w:tc><w:tcPr><w:tcW w:w="${widths[i]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>${cell.paragraphs.map(block => blockXml(block, options, relIds, images)).join("")}${!cell.paragraphs.length || cell.paragraphs.at(-1)?.table ? "<w:p/>" : ""}</w:tc>`).join("")}</w:tr>`).join("");
+  const before = p.spacingBefore ? paragraphXml({ runs: [], spacingBefore: p.spacingBefore, lineHeight: 0.01, keepNext: true }, options, relIds, images) : "";
+  const after = p.spacingAfter ? paragraphXml({ runs: [], spacingAfter: p.spacingAfter, lineHeight: 0.01 }, options, relIds, images) : "";
+  return before + `<w:tbl><w:tblPr><w:tblW w:w="${widths.reduce((a,b)=>a+b,0)}" w:type="dxa"/><w:tblBorders>${["top","left","bottom","right","insideH","insideV"].map(side=>`<w:${side} w:val="nil"/>`).join("")}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar>${["top","left","bottom","right"].map(side=>`<w:${side} w:w="0" w:type="dxa"/>`).join("")}</w:tblCellMar></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${rows}</w:tbl>` + after;
+}
+function flattenParagraphs(paragraphs: DocxParagraph[]): DocxParagraph[] {
+  return paragraphs.flatMap(p => [p, ...(p.table ? p.table.rows.flatMap(row => row.flatMap(cell => flattenParagraphs(cell.paragraphs))) : [])]);
 }
 
 /** numbering.xml：numId=1 固定 bullet；之后每个 ordered 列表独立 numId（各自从 1 开始） */
@@ -196,7 +212,7 @@ function documentXml(
   relIds: Map<string, string>,
   images: Map<DocxImage, number>
 ): string {
-  const body = paragraphs.map((p) => paragraphXml(p, options, relIds, images)).join("");
+  const body = paragraphs.map((p) => blockXml(p, options, relIds, images)).join("");
   // A4：210mm×297mm = 11906×16838 twips；页边距沿用网页的 pagePadding
   const margin = pxToTwips(options.pagePadding);
   return `${XML_HEAD}
@@ -214,13 +230,13 @@ ${body}
 /** 组装完整 .docx（ZIP 字节），浏览器端直接可下载 */
 export async function buildDocxBytes(options: DocxBuildOptions): Promise<Uint8Array> {
   const images = new Map<DocxImage, number>();
-  for (const paragraph of options.paragraphs) for (const run of paragraph.runs) {
+  for (const paragraph of flattenParagraphs(options.paragraphs)) for (const run of paragraph.runs) {
     if (run.image && !images.has(run.image)) images.set(run.image, images.size + 1);
   }
   // 1. 收集超链接 → 分配关系 id（从 rId100 起避免与 rIdStyles/rIdNumbering 撞车）
   const relIds = new Map<string, string>();
   let relIndex = 100;
-  for (const paragraph of options.paragraphs) {
+  for (const paragraph of flattenParagraphs(options.paragraphs)) {
     for (const run of paragraph.runs) {
       if (run.hyperlink && !relIds.has(run.hyperlink)) {
         relIds.set(run.hyperlink, `rId${relIndex}`);
@@ -230,7 +246,7 @@ export async function buildDocxBytes(options: DocxBuildOptions): Promise<Uint8Ar
   }
 
   // 2. 关系文件：样式 / 编号 / 超链接（编号仅在列表存在时声明）
-  const hasNumbering = options.orderedListCount > 0 || options.paragraphs.some((p) => p.numId !== undefined);
+  const hasNumbering = options.orderedListCount > 0 || flattenParagraphs(options.paragraphs).some((p) => p.numId !== undefined);
   const relEntries: string[] = [
     `<Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>`,
   ];

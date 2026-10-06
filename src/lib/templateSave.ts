@@ -16,6 +16,8 @@ import { builtinToDefinition } from "./templateResolver";
 import { resolveResumeStyle, resolveSectionStyle } from "./resumeStyle";
 import { TEMPLATE_SECTION_KEYS } from "@/types/templateDefinition";
 import { resumeSectionOrder } from "./resumePresentation";
+import { resolveLegacyResumeData } from "./resumePresentation";
+import { buildTemplateExample } from "./templateExample";
 import { listTemplateViews } from "./templateCatalog";
 import { useCustomTemplateStore, makeUniqueTemplateId } from "@/store/useCustomTemplateStore";
 
@@ -67,7 +69,11 @@ export function buildTemplateFromResume(
     category: options.category,
     tags: options.tags?.slice(0, 10),
     source: "custom-schema",
-    docxCapability: layout === "single-column" ? "full" : "basic",
+    builtinLayout: currentDefinition?.builtinLayout,
+    savedPresentation: includeColors && includeFonts && includeSpacing
+      ? buildTemplateExample(resolveLegacyResumeData(resume, currentDefinition), currentDefinition?.savedPresentation?.renderer ?? currentDefinition?.builtinLayout)
+      : undefined,
+    docxCapability: currentDefinition?.builtinLayout ? currentDefinition.docxCapability : layout === "single-column" ? "full" : "basic",
     layout: {
       layout,
       order: resumeSectionOrder(resume, currentDefinition),

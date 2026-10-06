@@ -1,3 +1,4 @@
+import { readResumeSettings } from "@/lib/readResumeSettings";
 import React, { useState } from "react";
 import { useTranslations } from "@/i18n/compat/client";
 import { Download, Loader2, ChevronDown, ShieldCheck } from "lucide-react";
@@ -103,7 +104,8 @@ const PdfExport = ({ children }: { children?: React.ReactNode }) => {
   const [isExportingMarkdown, setIsExportingMarkdown] = useState(false);
   const [isExportingDocx, setIsExportingDocx] = useState(false);
   const { activeResume } = useResumeStore();
-  const { globalSettings = {}, title } = activeResume || {};
+  const { title } = activeResume || {};
+  const globalSettings = readResumeSettings(activeResume);
   const t = useTranslations("pdfExport");
   const tBasicField = useTranslations("workbench.basicPanel.basicFields");
 
@@ -187,6 +189,11 @@ const PdfExport = ({ children }: { children?: React.ReactNode }) => {
       if (result.ok) {
         if (result.simplified) {
           toast.info(t("toast.docxSimplified"));
+        } else if (result.decorationsOmitted?.length) {
+          // 完整布局导出成功，仅说明哪些装饰在 Word 中省略
+          toast.info(t("toast.docxDecorationsOmitted", {
+            items: result.decorationsOmitted.map((item) => t(`toast.docxDecoration.${item}`)).join("、"),
+          }));
         } else {
           toast.success(t("toast.docxSuccess"));
         }

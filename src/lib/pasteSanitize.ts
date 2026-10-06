@@ -29,7 +29,7 @@ export function sanitizePastedHtml(html: string): string {
 
   // <font> 剥壳：替换为其子内容（其 face/size/color 属性随之消失）
   const unwrapFontTags = (root: ParentNode) => {
-    root.querySelectorAll("font").forEach((font) => {
+    Array.from(root.querySelectorAll("font")).forEach((font) => {
       const parent = font.parentNode;
       if (!parent) return;
       while (font.firstChild) parent.insertBefore(font.firstChild, font);
@@ -41,7 +41,10 @@ export function sanitizePastedHtml(html: string): string {
   unwrapFontTags(doc.body);
 
   // 移除所有元素的 style / class / id / 其他排版相关属性
-  doc.body.querySelectorAll("*").forEach((el) => {
+  Array.from(doc.body.querySelectorAll("*")).forEach((el) => {
+    el.removeAttribute("data-resume-section");
+    el.removeAttribute("data-section-id");
+    el.removeAttribute("data-body-inline");
     el.removeAttribute("style");
     el.removeAttribute("class");
     el.removeAttribute("id");

@@ -6,21 +6,16 @@
 
 需要 Node.js 20 或更新版本。无需安装额外 npm 依赖。先启动魔方简历（默认 localhost:3000），再注册 MCP：
 
+在项目根目录执行（支持项目移动、空格目录和 Node 不在 PATH）：
+
 ```powershell
-codex mcp add magic-resume -- node "D:\FileInstalled\magic_resume\magic-resume\mcp\server.mjs"
+node scripts/setup-mcp.mjs
+# 或 pnpm mcp:install
 ```
 
-没有 codex 命令时，在 Codex 的 MCP 设置里添加 STDIO 服务：命令 `node`，参数为项目 `mcp/server.mjs` 的完整路径。也可在 `%USERPROFILE%\.codex\config.toml` 加入：
+脚本通过 import.meta.url 计算当前 server.mjs 的绝对路径，使用当前 Node 可执行文件注册到 Codex。项目移动后重新运行即可。无需手动修改路径。
 
-```toml
-[mcp_servers.magic-resume]
-command = "node"
-args = ['D:\FileInstalled\magic_resume\magic-resume\mcp\server.mjs']
-startup_timeout_sec = 10
-tool_timeout_sec = 60
-```
-
-若 Node 不在 PATH，将 command 改为 node.exe 的完整路径。不要覆盖已有 MCP 配置。项目移动后同步更新 args。重启 Codex / 新建会话，使工具加载。MCP 服务由 Codex 启动，不要在终端手动启动后期待它连到另一个服务进程。
+没有 codex 命令时，运行 `node scripts/setup-mcp.mjs --print` 生成配置，再添加到 Codex MCP 设置或 config.toml；不会覆盖其他服务。可用 `--codex <codex.exe完整路径>` 指定 CLI。安装成功后重启 Codex / 新建会话，再获取配对码。MCP 服务由 Codex 启动。
 
 ## 配对网页
 
@@ -49,7 +44,12 @@ tool_timeout_sec = 60
 | set_resume_style | 字体、字号、颜色、边距、行距、间距 |
 | format_rich_text | 单个正文的缩进、字号、对齐 |
 | apply_template | 应用模板；可保留排版或使用模板默认 |
-| undo_resume_change | 撤销最近一次简历操作 |
+| undo_resume_change / redo_resume_change | 撤销与重做 |
+| mutate_resume_item | 条目新增/修改/删除/上下移动，无需替换整个数组 |
+| manage_body_sections | 正文块读取/新增/标题和正文修改/删除/上下移动/同行 |
+| set_section_style / set_item_style | 模块标题/间距与条目正文、项目名称/角色样式 |
+| get_effective_style | 最终生效样式 |
+| inspect_layout | 已打开工作台的实际页数、模块高度与溢出 |
 | list_templates / get_template_schema | 模板列表及展示参数说明 |
 | create_template / update_template | 创建/更新“我的模板” |
 | save_resume_as_template | 当前展示样式保存为模板 |
@@ -79,3 +79,13 @@ Codex --MCP stdio--> 本地 Node 服务
 自定义网页地址时配置 `MAGIC_RESUME_ORIGINS`（逗号分隔精确 Origin），例如 `http://localhost:3001,http://127.0.0.1:3001`；可选 `MAGIC_RESUME_BRIDGE_PORT` 指定桥接端口。浏览器的本地网络访问权限提示需允许，HTTPS 网页到 HTTP 本地桥可能受浏览器限制，本地版使用 HTTP localhost 页面。
 
 网页版 ChatGPT 的远程接入不在此版本中。Codex 配置参考：https://learn.chatgpt.com/docs/extend/mcp?surface=cli
+
+## 精细编辑与重试
+
+`manage_body_sections(action="list")` 返回稳定块 id。写入使用 bodySectionId；list 无需 expectedUpdatedAt。例如“把 BizAgent 的项目定位移到核心负责下面，并设为同行”，先 get_resume 定位项目 itemId，再 list 定位块，逐步使用最新返回的版本。
+
+所有写工具支持可选 idempotencyKey。重试必须保持首次工具与所有参数完全相同（包含首次 expectedUpdatedAt）。同键返回首次结果；不同参数复用同键会拒绝。幂等记录在当前网页标签会话保留24小时、最多100条，跨桥接重连与网页刷新有效；不是跨设备永久记录。未确认的 pending 不重复执行，先读取核实。
+
+inspect_layout 需要目标简历工作台已打开、字体加载完成；否则明确返回不可测量。结果描述Web预览，不替代Word分页。请先调整间距和布局，不应为了强行一页自动把正文降到不易阅读的字号。
+
+升级后重启 Codex/新建聊天重新加载21个工具，并重新获取配对码。导出工具和模板删除/复制/导出生命周期暂不纳入此轮。

@@ -219,7 +219,7 @@ test("内置模板: config → definition → 视图 的三段转换不丢字段
   });
   assert.equal(definition.source, "builtin-react");
   assert.equal(definition.spacing.contentPadding, 32);
-  assert.equal(definition.docxCapability, "basic");
+  assert.equal(definition.docxCapability, "full");
 
   const view = definitionToTemplateView(definition);
   assert.equal(view.id, "classic");

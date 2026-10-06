@@ -13,10 +13,18 @@ export function sanitizeMcpRichText(html: string): string {
     const background = colorToHex(style.backgroundColor || "");
     const size = /^([\d.]+)px$/.exec(style.fontSize);
     const align = ["left", "center", "right", "justify"].includes(style.textAlign) ? style.textAlign : "";
+    const isSection = element.tagName === "H3" && element.getAttribute("data-resume-section") === "1";
+    const inline = element.getAttribute("data-body-inline") === "1";
+    const sectionId = element.getAttribute("data-section-id") ?? "";
     const indent = Number(element.getAttribute("data-indent"));
     const start = Number(element.getAttribute("start"));
     const href = element.tagName === "A" ? normalizeLinkHref(element.getAttribute("href") ?? "") : null;
     for (const attribute of Array.from(element.attributes)) element.removeAttribute(attribute.name);
+    if (isSection) {
+      element.setAttribute("data-resume-section", "1");
+      if (/^[a-zA-Z0-9_-]{1,80}$/.test(sectionId)) element.setAttribute("data-section-id", sectionId);
+      if (inline) element.setAttribute("data-body-inline", "1");
+    }
     const cleanStyle = (element as HTMLElement).style;
     if (color) cleanStyle.color = `#${color}`;
     if (background) cleanStyle.backgroundColor = `#${background}`;

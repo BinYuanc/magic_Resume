@@ -3,7 +3,7 @@
  *
  * 职责边界（非常重要）：
  * - TemplateDefinition **只描述展示规则**：布局、字体、字号、颜色、间距、模块默认样式。
- * - TemplateDefinition **禁止保存任何简历内容**（姓名 / 手机 / 邮箱 / 经历正文 / 项目正文）。
+ * - TemplateDefinition **禁止保存真实简历内容**；可携带生成的示例，以保留排版结构。
  * - 内容由 ResumeData 负责，用户手动样式由 ResumeStyleOverrides 负责，三者互相独立。
  *
  * 这样做的好处：
@@ -90,6 +90,8 @@ export interface TemplateLayoutDoc {
 
 /** 主题样式（字体 / 字号 / 颜色 / 间距 / 模块默认样式） */
 export interface TemplateThemeDoc {
+  /** 保存排版的示例快照，只含生成的示例内容，不含用户履历。 */
+  savedPresentation?: SavedTemplatePresentation;
   schemaVersion?: number;
   fontFamily?: string;
   baseFontSize?: number;
@@ -140,6 +142,7 @@ export interface TemplateSectionStyle {
  * 内置 React 模板通过 adapter 转换得到，见 src/lib/templateResolver.ts）。
  */
 export interface TemplateDefinition {
+  savedPresentation?: SavedTemplatePresentation;
   id: string;
   name: string;
   description?: string;
@@ -163,6 +166,13 @@ export interface TemplateDefinition {
   importedFrom?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface SavedTemplatePresentation {
+  version: 1;
+  /** 复用原有 React 布局，避免保存后悄悄换成另一套布局。 */
+  renderer?: string;
+  example: import("./resume").ResumeData;
 }
 
 export interface TemplateTypography {

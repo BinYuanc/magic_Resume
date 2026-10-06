@@ -1,3 +1,4 @@
+import { readResumeSettings } from "../src/lib/readResumeSettings";
 import test from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
@@ -79,15 +80,15 @@ test("旧简历: 保留排版不改内容，默认切换完全重置字号和行
   const old=fixture({templateId:"classic",globalSettings:{baseFontSize:11,lineHeight:1.1,sectionStyles:{projects:{itemSpacing:3}}}});
   useResumeStore.getState().addResume(old);
   useResumeStore.getState().setTemplate(def.id,{preserveOverrides:true});
-  assert.equal(useResumeStore.getState().activeResume!.globalSettings.baseFontSize,11);
+  assert.equal(useResumeStore.getState().activeResume!.styleOverrides?.global?.baseFontSize,11);
   useResumeStore.getState().setTemplate(def.id,{preserveOverrides:false});
   const changed=useResumeStore.getState().activeResume!;
-  assert.equal(changed.globalSettings.baseFontSize,23);assert.equal(changed.globalSettings.lineHeight,2.8);
+  assert.equal(readResumeSettings(changed).baseFontSize,23);assert.equal(readResumeSettings(changed).lineHeight,2.8);
   assert.equal(changed.globalSettings.sectionStyles,undefined);assert.deepEqual(changed.projects,old.projects);assert.equal(changed.basic.name,old.basic.name);
 });
 test("自定义模板新建: 初始化值来自模板",()=>{
   useCustomTemplateStore.setState({templates:[definition()]});useResumeStore.getState().createResume("regression-template",true);
-  const resume=useResumeStore.getState().activeResume!;assert.equal(resume.globalSettings.baseFontSize,23);assert.equal(resume.globalSettings.pagePadding,5);
+  const resume=useResumeStore.getState().activeResume!;assert.equal(readResumeSettings(resume).baseFontSize,23);assert.equal(readResumeSettings(resume).pagePadding,5);
 });
 test("保存自定义排版: 比例、栏位、顺序、模块样式不丢失",()=>{
   const def=definition();useCustomTemplateStore.setState({templates:[def]});

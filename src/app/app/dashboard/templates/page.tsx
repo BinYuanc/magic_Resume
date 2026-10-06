@@ -23,6 +23,8 @@ import ResumeTemplateComponent from "@/components/templates";
 import { initialResumeState, initialResumeStateEn } from "@/config/initialResumeData";
 import type { ResumeTemplate } from "@/types/template";
 import { normalizeFontFamily } from "@/utils/fonts";
+import { withTemplateExample } from "@/lib/templateExample";
+import { templateDefaultSettings } from "@/lib/resumePresentation";
 
 const A4_WIDTH_PX = 793.700787;
 const PREVIEW_MODAL_SCALE = 0.529166667;
@@ -64,25 +66,32 @@ const buildTemplatePreviewData = (
   template: ResumeTemplate,
   selectedColor: string,
   mockId: string
-) =>
-({
-  ...baseData,
+) => {
+  const definition = useCustomTemplateStore.getState().templates.find(entry => entry.id === template.id);
+  const data = definition?.savedPresentation && !(baseData as any).id
+    ? withTemplateExample(baseData as any, definition)
+    : baseData;
+  return ({
+  ...data,
   id: mockId,
   templateId: template.id,
+  styleOverrides: undefined,
+  styleModelVersion: undefined,
   globalSettings: {
-    ...baseData.globalSettings,
+    ...templateDefaultSettings(definition, data.globalSettings),
     themeColor: selectedColor || template.colorScheme.primary,
     sectionSpacing: template.spacing.sectionGap,
     paragraphSpacing: template.spacing.itemGap,
     pagePadding: template.spacing.contentPadding,
   },
   basic: {
-    ...baseData.basic,
+    ...data.basic,
     layout: template.basic.layout,
-    photo: TEMPLATE_PREVIEW_PHOTO,
-    photoConfig: TEMPLATE_PREVIEW_PHOTO_CONFIG,
+    photo: definition?.savedPresentation?.example.basic.photo ?? TEMPLATE_PREVIEW_PHOTO,
+    photoConfig: definition?.savedPresentation?.example.basic.photoConfig ?? TEMPLATE_PREVIEW_PHOTO_CONFIG,
   },
 } as any);
+};
 
 interface TemplateCardItemProps {
   index: number;

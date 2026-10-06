@@ -3,11 +3,16 @@ import { useCustomTemplateStore } from "@/store/useCustomTemplateStore";
 import { clearHistoryGroup } from "@/store/resumeHistory";
 import { listTemplateViews } from "./templateCatalog";
 import { resolveTemplateDefinition } from "./templateResolver";
+import { settingsPatch, productSettings } from "./styleMigration";
 import { templateDefaultSettings } from "./resumePresentation";
 import { buildTemplatePackage, parseTemplatePackage } from "./templateSchema";
 import { buildTemplateFromResume } from "./templateSave";
 import { mcpTemplateGuide } from "./mcpTemplateGuide";
 import { formatMcpRichText, sanitizeMcpRichText } from "./mcpRichText";
+import { mutateItem, manageBody, itemStylePatch } from "./mcpFineEditing";
+import { withIdempotency } from "./mcpIdempotency";
+import { inspectResumeLayout } from "./inspectLayout";
+import { resolveResumeStyle, resolveSectionStyle, resolveItemStyle } from "./resumeStyle";
 import { colorToHex } from "./color";
 import type { ResumeData } from "@/types/resume";
 // JS 清单与本地 stdio 服务共用；不引入 server.mjs 到浏览器。
@@ -92,10 +97,17 @@ function parsePackage(raw: Args) {
 }
 
 export function executeMcpAction(name: string, args: Args): unknown {
+  const descriptor = tools.find((entry: { name: string }) => entry.name === name);
+  assert(descriptor, "不支持的工具"); validate(args, descriptor.inputSchema); checkTree(args);
+  const readOnly = descriptor.annotations.readOnlyHint || name === "manage_body_sections" && args.action === "list";
+  return readOnly ? executeMcpActionCore(name,args) : withIdempotency(name,args,()=>executeMcpActionCore(name,args));
+}
+function executeMcpActionCore(name: string, args: Args): unknown {
   const descriptor = tools.find((tool: { name: string }) => tool.name === name);
   assert(descriptor && name !== "get_connection_info", "不支持的网页操作");
   validate(args, descriptor.inputSchema); checkTree(args);
   assert(JSON.stringify(args).length <= 2 * 1024 * 1024, "操作参数超过2MB");
+  for (const key of ["sectionId","itemId"]) if (args[key]) assert(!["__proto__","constructor","prototype"].includes(args[key]), "不允许的标识符");
   const store = useResumeStore.getState();
   const templateStore = useCustomTemplateStore.getState();
   const views = listTemplateViews(templateStore.templates);
@@ -125,27 +137,65 @@ export function executeMcpAction(name: string, args: Args): unknown {
     templateStore.addTemplate(normalized);
     return { template: normalized, templatesUrl: "/app/dashboard/templates" };
   }
+  if (name === "get_effective_style") {
+    const definition = resolveTemplateDefinition(resume.templateId, templateStore.templates);
+    const global = resolveResumeStyle(definition,resume.styleOverrides,resume.globalSettings);
+    const sections = Object.fromEntries((args.sectionId ? [args.sectionId] : resume.menuSections.map(s=>s.id)).map(key => [key,resolveSectionStyle(definition,resume.styleOverrides,resume.globalSettings,key === "selfEvaluation" ? "summary" : key,global)]));
+    const entries = [...(resume.projects ?? []), ...(resume.experience ?? []), ...(resume.education ?? []), ...Object.values(resume.customData ?? {}).flat()];
+    if (args.itemId) assert(entries.some(item=>item.id === args.itemId), "条目不存在");
+    const items = Object.fromEntries(entries.filter(item=>!args.itemId || item.id === args.itemId).map(item => {
+      const local = resolveItemStyle(resume.styleOverrides,item.id);
+      const body = { fontSize:global.baseFontSize, color:global.textColor, fontFamily:global.fontFamily, bold:false, italic:false, underline:false, ...local };
+      const project = item as import("@/types/resume").Project;
+      return [item.id, { body, ...("name" in item ? {
+        name:{fontSize:global.subheaderSize,color:global.textColor,bold:true,...project.nameStyle},
+        role:{fontSize:global.subheaderSize,color:global.textColor,bold:false,...project.roleStyle},
+      } : {}) }];
+    }));
+    return { updatedAt:resume.updatedAt, templateId:resume.templateId, global, sections, items };
+  }
+  if (name === "inspect_layout") return inspectResumeLayout(resume,store.activeResumeId);
+  if (name === "manage_body_sections" && args.action === "list") return manageBody(resume,args);
   assert(resume.updatedAt === args.expectedUpdatedAt, "简历已被修改，请重新 get_resume 后合并新内容，不要覆盖用户修改");
+  if (name === "mutate_resume_item") return update(resume,mutateItem(resume,args));
+  if (name === "manage_body_sections") return update(resume,manageBody(resume,args) as Partial<ResumeData>);
+  if (name === "set_item_style") {
+    if (args.style?.color) assert(colorToHex(args.style.color),"颜色无效");
+    return update(resume,itemStylePatch(resume,args));
+  }
+  if (name === "set_section_style") {
+    assert(resume.menuSections.some(s=>s.id === args.sectionId || s.id === "selfEvaluation" && args.sectionId === "summary"),"模块不存在");
+    assert(args.reset || args.style && Object.keys(args.style).length,"需要 style 或 reset");
+    for (const key of ["color","background"]) if (args.style?.[key]) assert(colorToHex(args.style[key]),"颜色无效");
+    const sections = { ...resume.styleOverrides?.sections };
+    const key = args.sectionId === "selfEvaluation" ? "summary" : args.sectionId;
+    if (args.reset) { delete sections[key]; if (key === "summary") delete sections.selfEvaluation; }
+    else sections[key] = { ...sections[key], ...args.style };
+    return update(resume,{ styleOverrides:{ ...resume.styleOverrides, sections } });
+  }
   if (name === "update_resume") return update(resume, sanitizePatch(args.patch, resume));
   if (name === "set_resume_style") {
     if (args.settings.themeColor) assert(colorToHex(args.settings.themeColor), "主题颜色无效");
-    const global = { ...resume.styleOverrides?.global };
-    for (const [key, value] of Object.entries(args.settings)) (global as Args)[key === "paragraphSpacing" ? "itemSpacing" : key] = value;
-    return update(resume, { globalSettings: { ...resume.globalSettings, ...args.settings }, styleOverrides: { ...resume.styleOverrides, global } });
+    return update(resume, settingsPatch(resume, args.settings));
   }
   if (name === "apply_template") {
     const definition = resolveTemplateDefinition(args.templateId, templateStore.templates);
     assert(definition && views.some((item) => item.id === args.templateId), "模板不存在");
     return update(resume, args.preserveOverrides ? { templateId: args.templateId } : {
-      templateId: args.templateId, styleOverrides: undefined,
-      globalSettings: templateDefaultSettings(definition, resume.globalSettings), basic: { ...resume.basic, layout: definition.layout.basicLayout ?? "left" },
+      templateId: args.templateId, styleOverrides: {},
+      globalSettings: productSettings(templateDefaultSettings(definition, resume.globalSettings)), basic: { ...resume.basic, layout: definition.layout.basicLayout ?? "left" },
     });
   }
-  if (name === "undo_resume_change") {
-    assert(store.history[resume.id]?.length, "没有可撤销操作");
+  if (name === "undo_resume_change" || name === "redo_resume_change") {
+    const redo = name === "redo_resume_change";
+    assert((redo ? store.future : store.history)[resume.id]?.length,redo ? "没有可重做操作" : "没有可撤销操作");
     const active = store.activeResumeId;
-    store.setActiveResume(resume.id); useResumeStore.getState().undo();
-    if (active && active !== resume.id) useResumeStore.getState().setActiveResume(active);
+    store.setActiveResume(resume.id);
+    try { if (redo) useResumeStore.getState().redo(); else useResumeStore.getState().undo(); }
+    finally {
+      if (active && active !== resume.id) useResumeStore.getState().setActiveResume(active);
+      else if (!active) useResumeStore.setState({activeResumeId:null,activeResume:null});
+    }
     return resultResume(resume.id);
   }
   if (name === "format_rich_text") {

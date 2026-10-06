@@ -17,6 +17,9 @@ import { findTemplateView, listTemplateViews } from "@/lib/templateCatalog";
 import { useCustomTemplateStore } from "./useCustomTemplateStore";
 import { resolveTemplateDefinition } from "@/lib/templateResolver";
 import { templateDefaultSettings } from "@/lib/resumePresentation";
+import { migrateResumeStyle, settingsPatch, productSettings } from "@/lib/styleMigration";
+import { migrateResumeBody } from "@/lib/bodySections";
+import { withTemplateExample } from "@/lib/templateExample";
 import {
   initialResumeState,
   initialResumeStateEn,
@@ -323,20 +326,22 @@ export const useResumeStore = create(
           ? findTemplateView(templateId, customTemplates)
           : listTemplateViews(customTemplates)[0];
 
-        const newResume: ResumeData = {
-          ...initialResumeData,
+        const newResume: ResumeData = migrateResumeBody(migrateResumeStyle({
+          ...(isBlank ? initialResumeData : withTemplateExample(initialResumeData, resolveTemplateDefinition(template?.id, customTemplates))),
           id,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           templateId: template?.id,
-          globalSettings: templateDefaultSettings(resolveTemplateDefinition(template?.id, customTemplates), initialResumeData.globalSettings),
-          basic: { ...initialResumeData.basic, layout: template.basic.layout },
+          globalSettings: productSettings(templateDefaultSettings(resolveTemplateDefinition(template?.id, customTemplates), initialResumeData.globalSettings)),
+          styleOverrides: {},
+          basic: { ...(isBlank ? initialResumeData.basic : withTemplateExample(initialResumeData, resolveTemplateDefinition(template?.id, customTemplates)).basic), layout: template.basic.layout },
           title: `${locale === "en" ? "New Resume" : "新建简历"} ${id.slice(
             0,
             6
           )}`,
-        };
+        }));
 
+        newResume.bodySectionsVersion = 1;
         set((state) => ({
           resumes: {
             ...state.resumes,
@@ -368,11 +373,10 @@ export const useResumeStore = create(
           const shouldPushHistory =
             !!historyKey && shouldPushHistoryEntry(resumeId, historyKey);
           const shouldClearFuture = !!historyKey;
-          const updatedResume = {
-            ...resume,
-            ...data,
-            updatedAt: new Date().toISOString(),
-          };
+          const patch = data.globalSettings ? { ...data, ...settingsPatch(resume, data.globalSettings), ...(Object.hasOwn(data, "styleOverrides") ? { styleOverrides: data.styleOverrides } : {}) } : data;
+          const updatedResume = migrateResumeBody(migrateResumeStyle({
+            ...resume, ...patch, updatedAt: new Date(Math.max(Date.now(), (Date.parse(resume.updatedAt) || 0) + 1)).toISOString(),
+          }));
 
           debouncedSyncToFile(updatedResume, resume);
 
@@ -405,7 +409,7 @@ export const useResumeStore = create(
           return false;
         }
 
-        const importedResume = normalizeImportedResume(resume, sourceModifiedAt);
+        const importedResume = migrateResumeBody(migrateResumeStyle(normalizeImportedResume(resume, sourceModifiedAt)));
         clearHistoryGroup(importedResume.id);
         clearPendingSync(importedResume.id);
 
@@ -929,26 +933,11 @@ export const useResumeStore = create(
       updateGlobalSettings: (settings: Partial<GlobalSettings>) => {
         const { activeResumeId, updateResume, activeResume } = get();
         if (activeResumeId) {
-          updateResume(activeResumeId, {
-            globalSettings: {
-              ...activeResume?.globalSettings,
-              ...settings,
-            },
-          });
+          if (activeResume) updateResume(activeResumeId, settingsPatch(activeResume, settings));
         }
       },
 
-      setThemeColor: (color) => {
-        const { activeResumeId, updateResume } = get();
-        if (activeResumeId) {
-          updateResume(activeResumeId, {
-            globalSettings: {
-              ...get().activeResume?.globalSettings,
-              themeColor: color,
-            },
-          });
-        }
-      },
+      setThemeColor: (color) => get().updateGlobalSettings({ themeColor: color }),
 
       setTemplate: (templateId, options) => {
         const { activeResumeId, resumes } = get();
@@ -972,8 +961,8 @@ export const useResumeStore = create(
         // 默认：使用模板默认排版 —— 只重置「展示层」，绝不碰 ResumeData 内容
         get().updateResume(activeResumeId, {
           templateId,
-          globalSettings: templateDefaultSettings(resolveTemplateDefinition(templateId, customTemplates), resume.globalSettings),
-          styleOverrides: undefined,
+          globalSettings: productSettings(templateDefaultSettings(resolveTemplateDefinition(templateId, customTemplates), resume.globalSettings)),
+          styleOverrides: {},
           basic: {
             ...resume.basic,
             layout: template.basic.layout,
@@ -981,6 +970,7 @@ export const useResumeStore = create(
         });
       },
       addResume: (resume: ResumeData) => {
+        resume = migrateResumeBody(migrateResumeStyle(resume));
         set((state) => ({
           resumes: {
             ...state.resumes,
@@ -1013,7 +1003,7 @@ export const useResumeStore = create(
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<PersistedResumeStore>;
-        const resumes = persisted.resumes ?? currentState.resumes;
+        const resumes = Object.fromEntries(Object.entries(persisted.resumes ?? currentState.resumes).map(([id, resume]) => [id, migrateResumeBody(migrateResumeStyle(resume))]));
         const activeResumeId =
           persisted.activeResumeId ?? currentState.activeResumeId;
 

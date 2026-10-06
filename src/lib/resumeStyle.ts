@@ -6,7 +6,7 @@
  *
  *   用户局部 Item Override
  * → 用户模块 Section Override
- * → 用户 Global Override（新的 styleOverrides.global，其次是旧的 globalSettings）
+ * → 用户 Global Override（styleOverrides.global；legacy 参数仅供未迁移数据/展示投影兼容）
  * → TemplateDefinition 默认
  * → 系统 Fallback
  */
@@ -56,7 +56,7 @@ export interface ResolvedResumeStyle {
  * 解析全局最终样式。
  * @param definition 模板定义（提供默认值）
  * @param overrides  用户覆盖层（可选，旧简历没有）
- * @param legacy     旧的 resume.globalSettings（可选，作为过渡期的次级来源）
+ * @param legacy     旧的 resume.globalSettings（可选，仅作未迁移数据适配）
  */
 export function resolveResumeStyle(
   definition: Pick<
@@ -157,6 +157,8 @@ export function resolveSectionStyle(
     itemSpacing:
       overrideSection.itemSpacing ??
       legacySection?.itemSpacing ??
+      overrides?.global?.itemSpacing ??
+      legacy?.paragraphSpacing ??
       templateSection.itemSpacing ??
       base.itemSpacing,
     align: overrideSection.align ?? templateSection.align ?? "left",

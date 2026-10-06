@@ -1,3 +1,4 @@
+import { readResumeSettings } from "@/lib/readResumeSettings";
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations, useLocale } from "@/i18n/compat/client";
@@ -80,7 +81,7 @@ export const ResumeWorkbench = () => {
         const fontFamilies = Array.from(
             new Set(
                 Object.values(resumes)
-                    .map((resume) => resume.globalSettings?.fontFamily)
+                    .map((resume) => readResumeSettings(resume).fontFamily)
                     .filter(Boolean)
             )
         );
@@ -121,29 +122,6 @@ export const ResumeWorkbench = () => {
     const handleCreateFromModal = (templateId: string | null) => {
         const isBlank = !templateId;
         const newId = createResume(templateId, isBlank);
-
-        if (templateId) {
-            const template = findTemplateView(templateId, customTemplates);
-            if (template) {
-                const { resumes, updateResume } = useResumeStore.getState();
-                const resume = resumes[newId];
-                if (resume) {
-                    updateResume(newId, {
-                        globalSettings: {
-                            ...resume.globalSettings,
-                            themeColor: template.colorScheme.primary,
-                            sectionSpacing: template.spacing.sectionGap,
-                            paragraphSpacing: template.spacing.itemGap,
-                            pagePadding: template.spacing.contentPadding,
-                        },
-                        basic: {
-                            ...resume.basic,
-                            layout: template.basic.layout,
-                        },
-                    });
-                }
-            }
-        }
 
         setIsCreateModalOpen(false);
         setActiveResume(newId);

@@ -235,8 +235,12 @@ export interface ResumeData {
   draggingProjectId: string | null;
   menuSections: MenuSection[];
   globalSettings: GlobalSettings;
-  /** 用户排版覆盖层（可选，旧简历没有此字段时视为「完全使用模板默认」） */
+  /** 用户排版覆盖层（可选，旧简历读取时迁移旧 globalSettings 样式） */
   styleOverrides?: ResumeStyleOverrides;
+  /** 单一样式存储版本；globalSettings 中的样式仅作为旧数据迁移来源。 */
+  styleModelVersion?: 1;
+  /** v1 正文块使用明确语义标记，普通 H3 不再分块。 */
+  bodySectionsVersion?: 1;
 }
 
 export interface ResumeStore {

@@ -1,3 +1,4 @@
+import { readResumeSettings } from "@/lib/readResumeSettings";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Layout, Type, SpaceIcon, Palette, Zap } from "lucide-react";
@@ -123,11 +124,11 @@ export function SidePanel({
   } = useResumeStore();
   const {
     menuSections = [],
-    globalSettings = {},
     activeSection,
     customData = {},
   } = activeResume || {};
 
+  const globalSettings = readResumeSettings(activeResume);
   const { themeColor = THEME_COLORS[0] } = globalSettings;
   const t = useTranslations("workbench.sidePanel");
 

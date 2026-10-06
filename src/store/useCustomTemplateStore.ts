@@ -100,7 +100,7 @@ export const useCustomTemplateStore = create<CustomTemplateState>()(
           id: newId,
           name: newName,
           source: "custom-schema",
-          builtinLayout: undefined, // 复制产物一定是 Schema 模板
+          builtinLayout: source.savedPresentation?.renderer, // 保存排版的副本沿用原始渲染布局
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };

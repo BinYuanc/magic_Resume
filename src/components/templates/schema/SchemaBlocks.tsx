@@ -110,13 +110,13 @@ export const ExperienceBlock: React.FC<{
     {items
       .filter((item) => item.visible !== false)
       .map((item, index) => (
-        <div key={item.id} style={{ ...itemStyle(overrides, item.id), marginTop: index === 0 ? 0 : `${itemSpacing}px` }}>
+        <div key={item.id} style={{ marginTop: index === 0 ? 0 : `${itemSpacing}px` }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
             <strong>{item.company}</strong>
             <span style={{ opacity: 0.75 }}>{item.date}</span>
           </div>
           <div style={{ opacity: 0.85 }}>{item.position}</div>
-          <RichText html={item.details} />
+          <RichText html={item.details} style={itemStyle(overrides,item.id)} />
         </div>
       ))}
   </div>
@@ -133,12 +133,12 @@ export const ProjectsBlock: React.FC<{
     {items
       .filter((item) => item.visible !== false)
       .map((item, index) => (
-        <div key={item.id} style={{ ...itemStyle(overrides, item.id), marginTop: index === 0 ? 0 : `${itemSpacing}px` }}>
+        <div key={item.id} style={{ marginTop: index === 0 ? 0 : `${itemSpacing}px` }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
-            <strong style={resolveTextStyle(item.nameStyle, resolveItemStyle(overrides, item.id).fontSize ?? subheaderSize)}>{item.name}</strong>
+            <strong style={resolveTextStyle(item.nameStyle, subheaderSize)}>{item.name}</strong>
             <span style={{ opacity: 0.75 }}>{formatDateString(item.date, locale)}</span>
           </div>
-          {item.role ? <div style={{ opacity: 0.85, ...resolveTextStyle(item.roleStyle, resolveItemStyle(overrides, item.id).fontSize ?? subheaderSize) }}>{item.role}</div> : null}
+          {item.role ? <div style={{ opacity: 0.85, ...resolveTextStyle(item.roleStyle, subheaderSize) }}>{item.role}</div> : null}
           {item.link ? (
             <a
               href={item.link}
@@ -150,7 +150,7 @@ export const ProjectsBlock: React.FC<{
               {item.linkLabel || item.link}
             </a>
           ) : null}
-          <RichText html={item.description} />
+          <RichText html={item.description} style={itemStyle(overrides,item.id)} />
         </div>
       ))}
   </div>
@@ -165,7 +165,7 @@ export const EducationBlock: React.FC<{
     {items
       .filter((item) => item.visible !== false)
       .map((item, index) => (
-        <div key={item.id} style={{ ...itemStyle(overrides, item.id), marginTop: index === 0 ? 0 : `${itemSpacing}px` }}>
+        <div key={item.id} style={{ marginTop: index === 0 ? 0 : `${itemSpacing}px` }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
             <strong>{item.school}</strong>
             <span style={{ opacity: 0.75 }}>
@@ -179,7 +179,7 @@ export const EducationBlock: React.FC<{
               .filter(Boolean)
               .join(" · ")}
           </div>
-          <RichText html={item.description} />
+          <RichText html={item.description} style={itemStyle(overrides,item.id)} />
         </div>
       ))}
   </div>
@@ -198,13 +198,13 @@ export const CustomBlock: React.FC<{
         {items
           .filter((item) => item.visible !== false)
           .map((item) => (
-            <div key={item.id} style={{ ...itemStyle(overrides, item.id), marginTop: `${itemSpacing}px` }}>
+            <div key={item.id} style={{ marginTop: `${itemSpacing}px` }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
                 <strong>{item.title}</strong>
                 <span style={{ opacity: 0.75 }}>{item.dateRange}</span>
               </div>
               {item.subtitle ? <div style={{ opacity: 0.85 }}>{item.subtitle}</div> : null}
-              <RichText html={item.description} />
+              <RichText html={item.description} style={itemStyle(overrides,item.id)} />
             </div>
           ))}
       </div>

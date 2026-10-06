@@ -1,3 +1,4 @@
+import { readResumeSettings } from "@/lib/readResumeSettings";
 
 import React, { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
@@ -68,7 +69,7 @@ const PreviewPanel = React.forwardRef<HTMLDivElement, PreviewPanelProps>(
     const { activeResume, setActiveSection } = useResumeStore();
     const customTemplates = useCustomTemplateStore((state) => state.templates);
     const selectedFontFamily = normalizeFontFamily(
-      activeResume?.globalSettings?.fontFamily
+      readResumeSettings(activeResume)?.fontFamily
     );
     const t = useTranslations("previewDock");
     const template = useMemo(
@@ -80,10 +81,10 @@ const PreviewPanel = React.forwardRef<HTMLDivElement, PreviewPanelProps>(
     const previewRef = useRef<HTMLDivElement>(null);
     const internalResumeContentRef = useRef<HTMLDivElement>(null);
     const resumeContentRef = (ref as React.MutableRefObject<HTMLDivElement>) || internalResumeContentRef;
-    const pagePadding = activeResume?.globalSettings?.pagePadding || 0;
-    const autoOnePageEnabled = activeResume?.globalSettings?.autoOnePage || false;
+    const pagePadding = readResumeSettings(activeResume)?.pagePadding || 0;
+    const autoOnePageEnabled = readResumeSettings(activeResume)?.autoOnePage || false;
     const pageBreakLinesVisible =
-      activeResume?.globalSettings?.pageBreakLinesVisible !== false;
+      readResumeSettings(activeResume)?.pageBreakLinesVisible !== false;
 
     const { contentHeight, scaleFactor, isScaled, cannotFit } = useAutoOnePage({
       contentRef: resumeContentRef,
@@ -171,7 +172,7 @@ const PreviewPanel = React.forwardRef<HTMLDivElement, PreviewPanelProps>(
               }}
               className="relative"
             >
-              <style jsx global>{`
+              <style>{`
               .grammar-error {
                 cursor: help;
                 border-bottom: 2px dashed;

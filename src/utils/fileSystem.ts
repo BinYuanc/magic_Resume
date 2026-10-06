@@ -41,7 +41,7 @@ export const storeFileHandle = async (
   if (!db) throw new Error("Database not initialized");
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(HANDLE_STORE, "readwrite");
+    const transaction = db!.transaction(HANDLE_STORE, "readwrite");
     const store = transaction.objectStore(HANDLE_STORE);
     const request = store.put(handle, key);
 
@@ -57,7 +57,7 @@ export const getFileHandle = async (
   if (!db) throw new Error("Database not initialized");
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(HANDLE_STORE, "readonly");
+    const transaction = db!.transaction(HANDLE_STORE, "readonly");
     const store = transaction.objectStore(HANDLE_STORE);
     const request = store.get(key);
 
@@ -71,7 +71,7 @@ export const storeConfig = async (key: string, value: any): Promise<void> => {
   if (!db) throw new Error("Database not initialized");
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(CONFIG_STORE, "readwrite");
+    const transaction = db!.transaction(CONFIG_STORE, "readwrite");
     const store = transaction.objectStore(CONFIG_STORE);
     const request = store.put(value, key);
 
@@ -85,7 +85,7 @@ export const getConfig = async (key: string): Promise<any> => {
   if (!db) throw new Error("Database not initialized");
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(CONFIG_STORE, "readonly");
+    const transaction = db!.transaction(CONFIG_STORE, "readonly");
     const store = transaction.objectStore(CONFIG_STORE);
     const request = store.get(key);
 

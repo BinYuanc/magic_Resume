@@ -476,7 +476,8 @@
         "includeColors": "包含当前主题色",
         "includeFonts": "包含当前字号",
         "includeSpacing": "包含当前间距",
-        "privacyNote": "模板只保存展示规则；姓名、经历、项目等内容不会被保存。",
+        "privacyNote": "模板保留排版与自动生成的示例内容，不保存真实姓名、联系方式、照片或履历。",
+        "exactLayoutNote": "开启颜色、字体和间距三项即可保存完整排版，包括局部字号、正文小标题与同行显示。换成示例后，换行及页数会随文字长度变化。",
         "cancel": "取消",
         "save": "保存为模板",
         "success": "已保存为模板：{name}",
@@ -581,6 +582,13 @@
       "markdownError": "Markdown 导出失败",
       "docxSuccess": "Word 文档已生成，可在 Word / WPS 中继续编辑",
       "docxSimplified": "Word 已生成（当前模板较复杂，已使用简化布局）",
+      "docxDecorationsOmitted": "Word 已按完整布局生成；以下装饰在 Word 中省略：{items}",
+      "docxDecoration": {
+        "contactIcons": "联系方式图标",
+        "githubContributions": "GitHub 贡献图",
+        "flexibleHeaderLayout": "自由头部布局",
+        "photoBorderRadius": "圆角照片"
+      },
       "docxError": "Word 导出失败：{message}"
     }
   },

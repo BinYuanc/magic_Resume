@@ -475,7 +475,8 @@
         "includeColors": "Include current colors",
         "includeFonts": "Include current font sizes",
         "includeSpacing": "Include current spacing",
-        "privacyNote": "Templates store presentation rules only. Names, experience and projects are never saved.",
+        "privacyNote": "Templates keep formatting and generated examples, never real names, contact details, photos or career content.",
+        "exactLayoutNote": "Enable colors, fonts and spacing to keep the full presentation, including local font sizes and body headings. Example text may change wrapping and page count.",
         "cancel": "Cancel",
         "save": "Save as template",
         "success": "Saved as template: {name}",
@@ -580,6 +581,13 @@
       "markdownError": "Markdown export failed",
       "docxSuccess": "Word document generated. Editable in Word / WPS.",
       "docxSimplified": "Word generated. Current template is complex, a simplified layout was used.",
+      "docxDecorationsOmitted": "Word exported with the full layout. Omitted decorations: {items}",
+      "docxDecoration": {
+        "contactIcons": "contact icons",
+        "githubContributions": "GitHub contribution graph",
+        "flexibleHeaderLayout": "free-form header layout",
+        "photoBorderRadius": "rounded photo"
+      },
       "docxError": "Word export failed: {message}"
     }
   },
