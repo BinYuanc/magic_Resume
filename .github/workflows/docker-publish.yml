@@ -12,6 +12,9 @@ env:
 
 jobs:
   build-and-push:
+    # 上游仓库专用：需要 DOCKERHUB_USERNAME / DOCKERHUB_TOKEN 密钥。
+    # fork 没有这些密钥，跳过以避免每次 push 出现红色失败。
+    if: github.repository == 'JOYCEQL/magic-resume'
     runs-on: ubuntu-latest
     permissions:
       contents: read

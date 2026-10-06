@@ -8,6 +8,9 @@ on:
 
 jobs:
   deploy:
+    # 上游仓库专用：需要 CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID 密钥。
+    # fork（如 BinYuanc/magic_Resume）没有这些密钥，跳过以避免每次 push 出现红色失败。
+    if: github.repository == 'JOYCEQL/magic-resume'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
