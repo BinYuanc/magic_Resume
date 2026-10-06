@@ -18,6 +18,7 @@ import { resolveItemStyle, type ResolvedResumeStyle } from "@/lib/resumeStyle";
 import { resolveTextStyle } from "@/lib/textStyle";
 import type { ResumeStyleOverrides } from "@/types/styleOverride";
 import { basicContactValues, basicFieldVisible, isResumeSectionEnabled } from "@/lib/resumePresentation";
+import { SECTION_TITLE_BORDER_WIDTH_PX } from "@/lib/sectionTitleBorder";
 
 function itemStyle(overrides: ResumeStyleOverrides | undefined, id: string): React.CSSProperties {
   const local = resolveItemStyle(overrides, id);
@@ -59,7 +60,7 @@ export const SectionHeading: React.FC<{
         fontWeight,
         textAlign: align,
         marginBottom: `${spacing}px`,
-        borderBottom: border ? `1px solid ${color}` : undefined,
+        borderBottom: border ? `${SECTION_TITLE_BORDER_WIDTH_PX}px solid ${color}` : undefined,
         paddingBottom: border ? "4px" : undefined,
       }}
     >

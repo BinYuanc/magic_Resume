@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { GlobalSettings } from "@/types/resume";
 import { useTemplateContext } from "../../TemplateContext";
+import { SECTION_TITLE_BORDER_WIDTH_PX } from "@/lib/sectionTitleBorder";
 
 interface SectionTitleProps {
     globalSettings?: GlobalSettings;
@@ -33,7 +34,7 @@ const SectionTitle = ({ type, title, globalSettings, showTitle = true }: Section
                 // 注意：这里不能写 `borderBottom: undefined`。
                 // React 会先展开 borderColor 的四条边，再用 shorthand 的 undefined 清空下边，
                 // 结果下划线颜色回落到 Tailwind 默认灰（原来主题色的蓝线会"消失"）。
-                borderBottom: sectionStyle?.border === false ? "none" : `1px solid ${themeColor ?? "currentColor"}`,
+                borderBottom: sectionStyle?.border === false ? "none" : `${SECTION_TITLE_BORDER_WIDTH_PX}px solid ${themeColor ?? "currentColor"}`,
                 marginBottom: `${sectionStyle?.itemSpacing ?? globalSettings?.paragraphSpacing ?? 0}px`,
                 fontWeight: sectionStyle?.fontWeight,
                 textAlign: sectionStyle?.align,

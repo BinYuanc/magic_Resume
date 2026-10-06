@@ -28,6 +28,7 @@ import { definitionToTemplateView } from "../src/lib/templateCatalog";
 import ClassicSectionTitle from "../src/components/templates/classic/sections/SectionTitle";
 import { TemplateProvider } from "../src/components/templates/TemplateContext";
 import type { TemplateSectionStyle } from "../src/types/templateDefinition";
+import { SECTION_TITLE_BORDER_WIDTH_PX, SECTION_TITLE_BORDER_EIGHTHS_OF_POINT } from "../src/lib/sectionTitleBorder";
 
 (globalThis as any).localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 const png = Uint8Array.from(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jT1sAAAAASUVORK5CYII=", "base64"));
@@ -204,7 +205,15 @@ test("内置经典模板: 模块标题下划线必须跟随主题色（不被 un
     </TemplateProvider>
   );
   // 开启边框（经典模板默认）：下划线颜色必须写出主题色，不能只靠 border-b 的默认灰
-  assert.match(html(true), /border-bottom:1px solid #1234ab/);
+  assert.match(html(true), new RegExp(`border-bottom:${SECTION_TITLE_BORDER_WIDTH_PX}px solid #1234ab`));
   // 显式关闭：才应该没有下划线
   assert.match(html(false), /border-bottom:none/);
+});
+
+test("模块标题下划线：网页与 Word 底框宽度来自同一个常量", async () => {
+  assert.equal(SECTION_TITLE_BORDER_EIGHTHS_OF_POINT, SECTION_TITLE_BORDER_WIDTH_PX * 6);
+  const bytes = await buildDocxBytes({ paragraphs: [{ runs: [{ text: "标题" }], border: "#1234ab" }],
+    orderedListCount: 0, fontFamily: "Arial", baseFontSize: 14, textColor: "#000000", pagePadding: 32 });
+  const xml = await readXml(bytes);
+  assert.match(xml, new RegExp(`<w:bottom w:val="single" w:sz="${SECTION_TITLE_BORDER_EIGHTHS_OF_POINT}" w:color="1234ab"/>`));
 });

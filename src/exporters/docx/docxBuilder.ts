@@ -16,6 +16,7 @@ import { zipFiles } from "@/lib/templateZip";
 import { isCjkFont, mapFontToWord } from "./fontMap";
 import type { DocxImage, DocxParagraph, DocxRun } from "./richTextToDocx";
 import { colorToHex, isTransparentColor } from "@/lib/color";
+import { SECTION_TITLE_BORDER_EIGHTHS_OF_POINT } from "@/lib/sectionTitleBorder";
 
 const XML_HEAD =
   '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
@@ -111,7 +112,7 @@ function paragraphXml(
     spacing.push(`w:after="${pxToTwips(paragraph.spacingAfter)}"`);
   }
   if (paragraph.lineHeight !== undefined) spacing.push(`w:line="${Math.round(paragraph.lineHeight * 240)}" w:lineRule="auto"`);
-  if (paragraph.border) pPrParts.push(`<w:pBdr><w:bottom w:val="single" w:sz="6" w:color="${colorHex(paragraph.border)}"/></w:pBdr>`);
+  if (paragraph.border) pPrParts.push(`<w:pBdr><w:bottom w:val="single" w:sz="${SECTION_TITLE_BORDER_EIGHTHS_OF_POINT}" w:color="${colorHex(paragraph.border)}"/></w:pBdr>`);
   // 背景是可选的装饰：颜色非法或完全透明时宁可不填充，也不要退化成黑色色块
   const backgroundHex = paragraph.background && !isTransparentColor(paragraph.background)
     ? colorToHex(paragraph.background)

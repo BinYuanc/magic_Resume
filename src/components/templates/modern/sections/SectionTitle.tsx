@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { GlobalSettings } from "@/types/resume";
 import { useTemplateContext } from "../../TemplateContext";
 import { cn } from "@/lib/utils";
+import { SECTION_TITLE_BORDER_WIDTH_PX } from "@/lib/sectionTitleBorder";
 
 interface SectionTitleProps {
     globalSettings?: GlobalSettings;
@@ -37,6 +38,8 @@ const SectionTitle = ({ type, title, globalSettings, showTitle = true, variant =
                 fontWeight: "bold",
                 color: isSidebar ? "#ffffff" : themeColor,
                 borderColor: isSidebar ? "rgba(255,255,255,0.2)" : themeColor,
+                // 用长写法只改宽度，避免 shorthand 覆盖上面的 borderColor
+                borderBottomWidth: `${SECTION_TITLE_BORDER_WIDTH_PX}px`,
                 marginBottom: isSidebar ? "12px" : `${globalSettings?.paragraphSpacing}px`,
             }}
         >
