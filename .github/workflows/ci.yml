@@ -1,7 +1,9 @@
 name: CI
+# 默认只在手动触发时运行（Actions 页面 → CI → Run workflow），不随 push / PR 自动跑。
+# 如果要恢复「每次 push 自动验证」，把下面两行注释去掉即可：
+#   push:
+#   pull_request:
 on:
-  push:
-  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
