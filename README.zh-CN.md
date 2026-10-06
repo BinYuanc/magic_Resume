@@ -69,12 +69,13 @@ pnpm dev
 
 不想敲命令：从 GitHub 下载 ZIP 解压后，直接双击根目录的启动脚本即可。
 
-- `start-magic-resume.bat`：带窗口启动（首次运行会自动安装依赖，需要 Node.js 20.19+）
-- `start-magic-resume.vbs`：静默启动（不显示黑色命令行窗口）
-- `stop-magic-resume.bat`：停止服务
+- `start-magic-resume.vbs`：**推荐**。第一次双击打开一个命令行窗口运行服务，**关掉这个窗口就停止服务**；之后再双击只会直接打开网页，不会重复开窗口。启动链路是 `wscript` → `cmd` → `node`（均已签名），不会弹「无法验证发布者」警告。
+- `start-magic-resume.bat`：等价脚本，带窗口；首次安装依赖或排查问题时用（批处理本身没有签名，双击可能弹「未知发布者」，点「运行」即可）
+- `stop-magic-resume.vbs`：不弹窗口地停止后台服务
+- `stop-magic-resume.bat`：按端口停止监听 3000 的进程
 
-脚本会自动定位自己所在的目录（放到任意路径都能用），优先使用 pnpm，没有 pnpm 时回退到 npm；
-服务就绪后自动最小化窗口并打开 `http://localhost:3000`。
+脚本会自动定位自己所在的目录（放到任意路径都能用），服务就绪后自动打开 `http://localhost:3000`。
+想把启动脚本放到桌面：右键 → 新建快捷方式 → 目标填 `wscript.exe "完整路径\start-magic-resume.vbs"`。
 
 ## 📦 构建打包
 

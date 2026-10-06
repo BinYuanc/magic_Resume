@@ -69,12 +69,13 @@ pnpm dev
 
 No terminal needed: download the ZIP from GitHub, extract it, and double-click a launcher in the project root.
 
-- `start-magic-resume.bat` — visible window; installs dependencies automatically on first run (needs Node.js 20.19+)
-- `start-magic-resume.vbs` — silent start (no console window)
-- `stop-magic-resume.bat` — stop the server
+- `start-magic-resume.vbs` — **recommended**. The first launch opens one console window that runs the server (**close that window to stop the server**); later launches only open the browser, so no second window appears. It starts through `wscript` → `cmd` → `node`, which are all signed, so Windows does not show the "unknown publisher" warning.
+- `start-magic-resume.bat` — the same thing as a batch file; handy for the first dependency install or for troubleshooting (a `.bat` itself is unsigned, so Windows may ask for confirmation — just click Run)
+- `stop-magic-resume.vbs` — stop the background server without opening a window
+- `stop-magic-resume.bat` — stop whatever listens on port 3000
 
-The launchers resolve their own folder (they work from any path), prefer pnpm and fall back to npm, then
-minimize the window and open `http://localhost:3000` once the server is ready.
+The launchers resolve their own folder (they work from any path) and open `http://localhost:3000` once the server is ready.
+To put the launcher on the desktop: right-click → New → Shortcut, target `wscript.exe "full\path\start-magic-resume.vbs"`.
 
 ## 📦 Build and Deploy
 
