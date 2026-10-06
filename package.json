@@ -27,7 +27,9 @@
     "test:docx": "tsx --test tests/docx-export.test.ts",
     "mcp:install": "node scripts/setup-mcp.mjs",
     "typecheck": "node scripts/ensure-routes.mjs && tsc --noEmit -p tsconfig.app.json",
-    "test:architecture": "tsx --test tests/architecture.test.ts tests/template-example.test.ts"
+    "test:architecture": "tsx --test tests/architecture.test.ts tests/template-example.test.ts",
+    "mcp:config": "node scripts/setup-mcp.mjs --print-json",
+    "mcp:server-info": "node scripts/setup-mcp.mjs --print-server"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
