@@ -1,91 +1,449 @@
-# 魔方简历 · 本地 Codex MCP 接入
+# 魔方简历 · 本地 MCP 接入
 
-本地版 v1：Codex 可直接读取和修改简历、设置正文缩进和字号、创建或更新可复用模板。截图发给 Codex，由 Codex 识别展示风格，再通过 MCP 创建模板；服务本身不识别图片，也不调用收费模型 API。
+Magic Resume 提供一个 **模型无关的本地 MCP Server**。
+
+它不绑定 Codex，也不绑定 DeepSeek、豆包、Gemini、Claude、Qwen、OpenAI。真正决定能否“直接接入”的，是你使用的 **AI 客户端 / Agent Host 是否支持本地 stdio MCP**。
+
+## 一句话理解
+
+```text
+任意支持 MCP 的 AI Host
+        │
+        │ stdio MCP
+        ▼
+Magic Resume MCP Server
+        │
+        │ 配对码 + 本地桥接
+        ▼
+已打开的 Magic Resume 网页
+        │
+        ▼
+简历 / 模板 / 排版 / Undo / Layout 检测
+```
+
+同一个 MCP Server 暴露同一套简历工具，不需要为不同模型维护多份业务代码。
+
+---
+
+## 支持方式
+
+### 方式 A：客户端原生支持本地 stdio MCP
+
+这是最简单的方式。
+
+你的客户端只需要能够配置：
+
+```json
+{
+  "command": "node",
+  "args": ["<项目绝对路径>/mcp/server.mjs"]
+}
+```
+
+模型品牌不重要。Host 可以使用任何它自己支持的模型。
+
+### 方式 B：只有模型 API，没有 MCP Host
+
+如果你只是直接调用：
+
+- DeepSeek API
+- Gemini API
+- 豆包 API
+- OpenAI API
+- Claude API
+- Qwen API
+
+那么模型 API 本身通常不会替你启动本地 MCP Server。
+
+这时需要你自己的 Agent Runtime：
+
+```text
+模型 API
+  │
+  │ Function / Tool Calling
+  ▼
+你的 Agent Runtime
+  │
+  │ MCP tools/call
+  ▼
+Magic Resume MCP Server
+```
+
+这仍然复用同一套 Magic Resume MCP 工具。
+
+---
 
 ## 安装与启动
 
-需要 Node.js 20 或更新版本。无需安装额外 npm 依赖。先启动魔方简历（默认 localhost:3000），再注册 MCP：
+需要 Node.js 20 或更新版本。MCP Server 本身不需要额外 npm 依赖。
 
-在项目根目录执行（支持项目移动、空格目录和 Node 不在 PATH）：
+先启动 Magic Resume（默认 `http://localhost:3000`）。
+
+### Codex 快捷安装
+
+在项目根目录执行：
 
 ```powershell
 node scripts/setup-mcp.mjs
-# 或 pnpm mcp:install
+# 或
+pnpm mcp:install
 ```
 
-脚本通过 import.meta.url 计算当前 server.mjs 的绝对路径，使用当前 Node 可执行文件注册到 Codex。项目移动后重新运行即可。无需手动修改路径。
+脚本通过 `import.meta.url` 自动计算当前项目 `mcp/server.mjs` 的绝对路径，不再写死本机目录。
 
-没有 codex 命令时，运行 `node scripts/setup-mcp.mjs --print` 生成配置，再添加到 Codex MCP 设置或 config.toml；不会覆盖其他服务。可用 `--codex <codex.exe完整路径>` 指定 CLI。安装成功后重启 Codex / 新建会话，再获取配对码。MCP 服务由 Codex 启动。
+如需 Codex TOML 配置：
+
+```powershell
+node scripts/setup-mcp.mjs --print
+```
+
+### 通用 MCP Host JSON
+
+运行：
+
+```powershell
+node scripts/setup-mcp.mjs --print-json
+```
+
+输出类似：
+
+```json
+{
+  "mcpServers": {
+    "magic-resume": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "D:\\path\\to\\magic_Resume\\mcp\\server.mjs"
+      ]
+    }
+  }
+}
+```
+
+不同 MCP Host 的根配置键可能不同，例如有的叫 `mcpServers`，有的叫其他名称。
+
+**真正通用的是：**
+
+```text
+command
+args
+```
+
+### 只输出 Server 启动信息
+
+如果你的 Host 使用自己的配置格式：
+
+```powershell
+node scripts/setup-mcp.mjs --print-server
+```
+
+输出：
+
+```json
+{
+  "command": "...node...",
+  "args": [".../mcp/server.mjs"]
+}
+```
+
+然后按照你的 MCP Host 文档粘贴即可。
+
+---
 
 ## 配对网页
 
-1. 对 Codex 说：“调用 magic-resume 的 get_connection_info，返回桥接地址和配对码。”
-2. 打开魔方简历首页，点击 **MCP 接入说明**。
-3. 填入返回的桥接地址与配对码，点击 **连接 Codex**。
-4. 出现“Codex 已连接”后，保持网页打开。可以在同一标签页进入工作台或模板库。
+MCP Host 启动 Magic Resume MCP Server 后：
 
-配对信息仅存当前标签页的 sessionStorage。服务重启会更换配对码；刷新网页可以恢复同一服务的连接。端口默认 43127，占用时自动使用其他空闲端口，以 get_connection_info 返回值为准。一次只接入一个网页，避免不同浏览器简历库混用。断开按钮位于网页左下角。
+1. 在当前 MCP 客户端中调用 `magic-resume.get_connection_info`。
+2. 工具会返回：
+   - `bridgeUrl`
+   - `pairingCode`
+   - `pageUrl`
+3. 打开 Magic Resume。
+4. 点击 **MCP 接入说明**。
+5. 填入桥接地址和配对码。
+6. 点击 **连接 MCP 客户端**。
+7. 保持网页打开。
 
-## 示例指令
+每次 MCP Server 重启都会生成新的配对码。
 
-- 读取我的简历，按 AI 应用开发岗位优化文字，保留真实经历，不编造指标。
-- 把第一条工作经历的职责左缩进2字符、字号改为16px，保留加粗和列表。
-- 附截图：先读取模板 schema，把参考图的单/双栏、基本信息对齐、色彩、字体、字号、分隔线与间距提取成新模板；不要复制截图中的个人信息。创建后应用到我的简历，使用模板默认排版。
-- 把当前排版保存为名叫“蓝色技术”的模板。
-- 撤销最近一次简历修改。
+默认桥接端口是 `43127`；如果被占用，会自动选择其他空闲端口，以 `get_connection_info` 返回值为准。
+
+一次只允许一个网页连接该 Server，避免不同浏览器里的简历库串线。
+
+---
+
+## 模型无关是什么意思
+
+下面几种情况使用的是 **同一个 Magic Resume MCP Server**：
+
+```text
+Codex + GPT
+Claude / 其他 MCP Host + Claude
+自定义 Agent Host + DeepSeek
+自定义 Agent Host + Gemini
+自定义 Agent Host + 豆包
+自定义 Agent Host + Qwen
+自定义 Agent Host + OpenAI
+```
+
+Magic Resume MCP 不关心背后是什么模型。
+
+它只接收标准 MCP 调用：
+
+```text
+initialize
+tools/list
+tools/call
+```
+
+因此换模型时，不需要重写简历业务逻辑。
+
+---
 
 ## 工具清单
+
+当前共有 21 个工具。
 
 | 工具 | 功能 |
 | --- | --- |
 | get_connection_info | 本地桥接地址、配对码、连接状态 |
-| list_resumes / get_resume | 简历列表、内容与版本 |
-| create_resume / update_resume | 创建空白简历、修改指定内容字段 |
-| set_resume_style | 字体、字号、颜色、边距、行距、间距 |
-| format_rich_text | 单个正文的缩进、字号、对齐 |
-| apply_template | 应用模板；可保留排版或使用模板默认 |
-| undo_resume_change / redo_resume_change | 撤销与重做 |
-| mutate_resume_item | 条目新增/修改/删除/上下移动，无需替换整个数组 |
-| manage_body_sections | 正文块读取/新增/标题和正文修改/删除/上下移动/同行 |
-| set_section_style / set_item_style | 模块标题/间距与条目正文、项目名称/角色样式 |
-| get_effective_style | 最终生效样式 |
-| inspect_layout | 已打开工作台的实际页数、模块高度与溢出 |
-| list_templates / get_template_schema | 模板列表及展示参数说明 |
-| create_template / update_template | 创建/更新“我的模板” |
-| save_resume_as_template | 当前展示样式保存为模板 |
+| list_resumes | 简历列表 |
+| get_resume | 完整简历与 updatedAt |
+| create_resume | 创建空白简历 |
+| update_resume | 修改简历内容字段 |
+| mutate_resume_item | 单条项目 / 工作 / 教育 / 自定义条目增删改移动 |
+| manage_body_sections | 正文块读取、新增、修改、删除、移动、同行 |
+| set_resume_style | 全局字体、字号、颜色、边距、行距、间距 |
+| set_section_style | 模块标题与模块间距样式 |
+| set_item_style | 条目正文、项目名称 / 角色局部样式 |
+| format_rich_text | 单个正文缩进、字号、对齐 |
+| get_effective_style | 读取最终生效样式 |
+| inspect_layout | 真实工作台页数、溢出、模块高度 |
+| list_templates | 内置与用户模板 |
+| get_template_schema | 自定义模板 Schema 能力说明 |
+| create_template | 创建自定义模板 |
+| update_template | 更新自定义模板 |
+| apply_template | 应用模板 |
+| save_resume_as_template | 当前排版保存为模板 |
+| undo_resume_change | 撤销 |
+| redo_resume_change | 重做 |
 
-写入现有简历前，读取 get_resume 的 updatedAt，作为 expectedUpdatedAt 传入。版本不同会拒绝覆盖，需重新读取并合并。正文条目通过 itemId 定位；数组更新为整体替换，须保留未修改条目。basic 仅允许基本文本字段局部合并。图标、图片配置等复杂数据在网页调整。模板内容走已有 Schema 安全/隐私检查；简历 HTML 走格式白名单。没有删除简历工具。
+---
 
-## 模板支持范围
+## 精细修改示例
 
-单栏/双栏；模块顺序；主栏/侧栏分配与比例；姓名信息左/中/右对齐；字体、正文与标题字号；行距；页边距；纯色；模块标题字重、对齐与水平分隔线；模块背景；模块和条目间距。
+### 只修改某一个项目
 
-创建后即可在模板库“我的模板”找到，跨简历复用。任意图形、特殊字形、渐变、复杂表格与不规则布局不能保证逐像素复刻。让 Codex 先说明无法表达的部分，再选择最接近的可用参数。截图中的信息只用于理解展示风格，不复制为模板内容。双栏 DOCX 使用简化线性布局，网页/PDF保留两栏。
-
-## 工作原理与边界
+先：
 
 ```text
-Codex --MCP stdio--> 本地 Node 服务
-                         ↕ 配对码认证 + 操作队列
-                 已连接网页的业务操作
-                         ↓
-              Zustand → localStorage / 现有文件同步
-                         ↓
-                    工作台预览、模板库
+list_resumes
+→ get_resume
 ```
 
-服务仅监听 127.0.0.1，校验 Host、网页 Origin 和随机配对码。没有公网服务；不读取任意文件，不执行模型生成的代码。只通过用户配对的网页操作当前浏览器数据；服务不单独存储简历库。浏览器关闭或休眠后工具不可用，需重新连接；隐藏标签页可能被浏览器节流，尽量保持页面可见。写入超时可能已执行，先读取核实，不能盲目重试。配对码不要提交到 Git、放进截图或分享文档。
+定位项目 `itemId` 后：
 
-自定义网页地址时配置 `MAGIC_RESUME_ORIGINS`（逗号分隔精确 Origin），例如 `http://localhost:3001,http://127.0.0.1:3001`；可选 `MAGIC_RESUME_BRIDGE_PORT` 指定桥接端口。浏览器的本地网络访问权限提示需允许，HTTPS 网页到 HTTP 本地桥可能受浏览器限制，本地版使用 HTTP localhost 页面。
+```text
+mutate_resume_item
+```
 
-网页版 ChatGPT 的远程接入不在此版本中。Codex 配置参考：https://learn.chatgpt.com/docs/extend/mcp?surface=cli
+不需要把整个 `projects[]` 重新提交。
 
-## 精细编辑与重试
+### 调整正文块
 
-`manage_body_sections(action="list")` 返回稳定块 id。写入使用 bodySectionId；list 无需 expectedUpdatedAt。例如“把 BizAgent 的项目定位移到核心负责下面，并设为同行”，先 get_resume 定位项目 itemId，再 list 定位块，逐步使用最新返回的版本。
+```text
+manage_body_sections(action="list")
+```
 
-所有写工具支持可选 idempotencyKey。重试必须保持首次工具与所有参数完全相同（包含首次 expectedUpdatedAt）。同键返回首次结果；不同参数复用同键会拒绝。幂等记录在当前网页标签会话保留24小时、最多100条，跨桥接重连与网页刷新有效；不是跨设备永久记录。未确认的 pending 不重复执行，先读取核实。
+拿到稳定的 `bodySectionId` 后，可执行：
 
-inspect_layout 需要目标简历工作台已打开、字体加载完成；否则明确返回不可测量。结果描述Web预览，不替代Word分页。请先调整间距和布局，不应为了强行一页自动把正文降到不易阅读的字号。
+```text
+add
+update_title
+update_content
+move_up
+move_down
+delete
+set_inline
+```
 
-升级后重启 Codex/新建聊天重新加载21个工具，并重新获取配对码。导出工具和模板删除/复制/导出生命周期暂不纳入此轮。
+普通 H3 不会被误识别成正文块。
+
+### 检查是否超过一页
+
+打开对应简历工作台后：
+
+```text
+inspect_layout
+```
+
+会读取真实 DOM，返回：
+
+- pageCount
+- overflowPx
+- 模块高度
+- 横向溢出
+
+它测量的是 Web 预览，不等同于 Word 分页。
+
+---
+
+## 写操作安全规则
+
+写入现有简历前：
+
+```text
+get_resume
+↓
+读取 updatedAt
+↓
+作为 expectedUpdatedAt 写回
+```
+
+如果用户已经在网页中修改了简历，版本不同会拒绝覆盖。
+
+所有写工具还支持可选：
+
+```text
+idempotencyKey
+```
+
+相同 key + 相同参数重试，会直接返回首次结果。
+
+相同 key + 不同参数，会拒绝。
+
+这样可以避免请求超时后重复创建条目或模板。
+
+---
+
+## 模板边界
+
+MCP 模板支持：
+
+- 单栏 / 双栏
+- 模块顺序
+- 主栏 / 侧栏分配
+- 栏宽比例
+- BasicInfo 左 / 中 / 右
+- 字体
+- 正文 / 标题 / 副标题字号
+- 行距
+- 页面边距
+- 主题色
+- 模块标题字号 / 字重 / 颜色
+- 对齐
+- 分隔线
+- 模块背景
+- 模块间距
+- 条目间距
+
+以下内容不能保证逐像素复刻：
+
+- 任意自由图形
+- 渐变装饰
+- 多层复杂表格
+- 特殊字体
+- PPT / Canva 式绝对定位
+
+截图中的姓名、电话、工作经历等只能用来理解排版，不允许写入模板。
+
+---
+
+## 安全边界
+
+本地桥：
+
+- 只监听 `127.0.0.1`
+- 校验 Host
+- 校验网页 Origin
+- 使用随机 48 位配对码
+- 一次只连接一个网页
+- 不执行模型生成的 JavaScript
+- 不读取任意本地文件
+- MCP Server 不单独持久化简历库
+
+简历仍由当前 Magic Resume 网页中的 Zustand / LocalStorage / 文件同步体系管理。
+
+配对码不要：
+
+- 提交 Git
+- 放进截图
+- 放进共享文档
+- 发给不可信程序
+
+---
+
+## 环境变量
+
+自定义网页 Origin：
+
+```powershell
+MAGIC_RESUME_ORIGINS=http://localhost:3001,http://127.0.0.1:3001
+```
+
+指定桥接端口：
+
+```powershell
+MAGIC_RESUME_BRIDGE_PORT=43127
+```
+
+如果端口占用，默认逻辑会自动回退到空闲端口。
+
+---
+
+## 常见问题
+
+### 为什么我配置了 DeepSeek API，却不能直接“连接 MCP”？
+
+因为：
+
+```text
+模型 API ≠ MCP Host
+```
+
+需要一个支持 MCP 的客户端，或者你自己的 Agent Runtime 负责 MCP 调用。
+
+### Magic Resume MCP 是否只能给 Codex 用？
+
+不是。
+
+Codex 只是目前提供一键注册脚本的客户端。
+
+`--print-json` 和 `--print-server` 用于其他 MCP Host。
+
+### 不同模型需要重新开发工具吗？
+
+不需要。
+
+它们都使用同一套 21 个 MCP Tool。
+
+### 网页版 AI 产品都能接吗？
+
+不一定。
+
+远程网页产品能否访问本机 stdio MCP Server，取决于该产品自己的 MCP / Connector 能力。
+
+Magic Resume 不会假设所有模型网页都可以直接访问本机 MCP。
+
+---
+
+## 验证建议
+
+升级后至少执行：
+
+```powershell
+pnpm test:mcp
+pnpm typecheck
+pnpm build
+```
+
+然后分别验证：
+
+1. Codex 快捷安装仍然可用。
+2. `--print` 输出 TOML。
+3. `--print-json` 输出 JSON Host 配置。
+4. `--print-server` 输出纯 command + args。
+5. MCP 客户端可以 `tools/list` 获取 21 个工具。
+6. `get_connection_info` 可以完成网页配对。
+7. 不同 Host 使用同一 Server 时工具行为一致。
