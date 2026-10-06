@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, ChevronsDown, ChevronsUp, Plus, Trash2 } from "lucide-react";
 import Field from "./Field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ const escapeText = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "
 const newSection = (title = "", content = "", inline = false): BodySection => ({ id: crypto.randomUUID(), title, content, inline });
 /** 「标题与正文同行」标记写在 h3 上，预览/PDF/Word 共用；不增加简历数据字段。 */
 const INLINE_ATTRIBUTE = "data-body-inline";
+/** 一键收起/展开的「上次选择」记在本地，下次打开沿用 */
+const COLLAPSED_STORAGE_KEY = "magic-resume:body-section-collapsed";
 
 /** 仍存为原有 HTML 正文；h3 划分标题与对应内容，不增加简历数据字段。 */
 function parseSections(html: string): BodySection[] {
@@ -50,15 +52,44 @@ export default function BodySectionsField({ label, value, onChange, placeholder 
   const [removing, setRemoving] = useState<string | null>(null);
   /** 收起的正文块（只显示标题行） */
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  /** 一键收起/展开的整体状态：也是「上次选择」的记忆值 */
+  const [allCollapsed, setAllCollapsed] = useState(false);
+  const allCollapsedRef = useRef(false);
   const lastHtml = useRef<string | null>(null);
   const sectionsRef = useRef(sections);
+  const collapseAll = (next: BodySection[]) => Object.fromEntries(next.map(section => [section.id, true]));
+  // 挂载后读取上次选择：收起 → 当前所有块都收起；展开 → 保持展开
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(COLLAPSED_STORAGE_KEY);
+      const next = stored === "1";
+      allCollapsedRef.current = next;
+      setAllCollapsed(next);
+      if (next) setCollapsed(collapseAll(sectionsRef.current));
+    } catch {
+      /* 隐私模式等场景读不到，保持默认展开 */
+    }
+  }, []);
   useEffect(() => {
     if (value === lastHtml.current) return;
     const next = parseSections(value);
     sectionsRef.current = next;
     setSections(next);
     lastHtml.current = value;
+    // 切换条目时沿用「上次选择」的收起/展开
+    setCollapsed(allCollapsedRef.current ? collapseAll(next) : {});
   }, [value]);
+  const toggleAllCollapsed = () => {
+    const next = !allCollapsed;
+    allCollapsedRef.current = next;
+    setAllCollapsed(next);
+    setCollapsed(next ? collapseAll(sectionsRef.current) : {});
+    try {
+      window.localStorage.setItem(COLLAPSED_STORAGE_KEY, next ? "1" : "0");
+    } catch {
+      /* 写不进去也不影响本次使用 */
+    }
+  };
   const commit = (next: BodySection[]) => {
     sectionsRef.current = next;
     setSections(next);
@@ -83,16 +114,25 @@ export default function BodySectionsField({ label, value, onChange, placeholder 
   return <div className="space-y-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <span className="text-sm font-medium">{label}</span>
-      <Popover open={adding} onOpenChange={setAdding}>
-        <PopoverTrigger asChild><Button type="button" variant="outline" size="sm" className="gap-1 text-xs"><Plus className="h-4 w-4" />{t("addBodySection")}</Button></PopoverTrigger>
-        <PopoverContent className="w-72 space-y-2" align="end">
-          <Button type="button" className="w-full" onClick={() => add()}>{t("addCustomBodySection")}</Button>
-          <p className="text-xs text-muted-foreground">{t("bodySectionHint")}</p>
-          <div className="flex flex-wrap gap-1.5">
-            {["headingOwner", "headingOverview", "headingTech", "headingChallenges", "headingResults"].map(key => <Button key={key} type="button" variant="outline" size="sm" className="h-auto whitespace-normal px-2 py-1 text-xs" onClick={() => add(t(key))}>{t(key)}</Button>)}
-          </div>
-        </PopoverContent>
-      </Popover>
+      <div className="flex items-center gap-2">
+        <Button type="button" variant="outline" size="sm" className="gap-1 text-xs"
+          onClick={toggleAllCollapsed}
+          title={allCollapsed ? t("bodySectionExpandAll") : t("bodySectionCollapseAll")}
+          aria-label={allCollapsed ? t("bodySectionExpandAll") : t("bodySectionCollapseAll")}>
+          {allCollapsed ? <ChevronsDown className="h-4 w-4" /> : <ChevronsUp className="h-4 w-4" />}
+          {allCollapsed ? t("bodySectionExpandAll") : t("bodySectionCollapseAll")}
+        </Button>
+        <Popover open={adding} onOpenChange={setAdding}>
+          <PopoverTrigger asChild><Button type="button" variant="outline" size="sm" className="gap-1 text-xs"><Plus className="h-4 w-4" />{t("addBodySection")}</Button></PopoverTrigger>
+          <PopoverContent className="w-72 space-y-2" align="end">
+            <Button type="button" className="w-full" onClick={() => add()}>{t("addCustomBodySection")}</Button>
+            <p className="text-xs text-muted-foreground">{t("bodySectionHint")}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {["headingOwner", "headingOverview", "headingTech", "headingChallenges", "headingResults"].map(key => <Button key={key} type="button" variant="outline" size="sm" className="h-auto whitespace-normal px-2 py-1 text-xs" onClick={() => add(t(key))}>{t(key)}</Button>)}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
     {sections.map((section, index) => {
       const isCollapsed = Boolean(collapsed[section.id]);

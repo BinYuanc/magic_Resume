@@ -925,6 +925,8 @@
     "bodySectionCancel": "Cancel",
     "bodySectionCollapse": "Collapse body",
     "bodySectionExpand": "Expand body",
+    "bodySectionCollapseAll": "Collapse all",
+    "bodySectionExpandAll": "Expand all",
     "bodySectionLayoutInline": "Body inline",
     "bodySectionLayoutStacked": "Body stacked",
     "bodySectionLayoutInlineHint": "Put the body next to the title",

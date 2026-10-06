@@ -875,6 +875,8 @@
     "bodySectionCancel": "取消",
     "bodySectionCollapse": "收起正文",
     "bodySectionExpand": "展开正文",
+    "bodySectionCollapseAll": "全部收起",
+    "bodySectionExpandAll": "全部展开",
     "bodySectionLayoutInline": "正文同行",
     "bodySectionLayoutStacked": "正文换行",
     "bodySectionLayoutInlineHint": "切换为标题与正文同行",
