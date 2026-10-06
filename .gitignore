@@ -54,4 +54,6 @@ src/routeTree.gen.ts
 
 .history
 .agent
-.tanstack.verify-dev.log
+.tanstack
+.verify-dev.log
+
