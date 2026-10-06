@@ -25,6 +25,9 @@ import { makeUniqueTemplateId } from "../src/store/useCustomTemplateStore";
 import { colorToHex, isTransparentColor } from "../src/lib/color";
 import { templateDefaultSettings } from "../src/lib/resumePresentation";
 import { definitionToTemplateView } from "../src/lib/templateCatalog";
+import ClassicSectionTitle from "../src/components/templates/classic/sections/SectionTitle";
+import { TemplateProvider } from "../src/components/templates/TemplateContext";
+import type { TemplateSectionStyle } from "../src/types/templateDefinition";
 
 (globalThis as any).localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 const png = Uint8Array.from(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jT1sAAAAASUVORK5CYII=", "base64"));
@@ -190,4 +193,18 @@ test("Word: 对齐值走白名单，注入字符串不进入 XML", async () => {
   const xml = await readXml(bytes);
   assert.ok(!xml.includes("w:evil"));
   assert.equal((xml.match(/<w:jc /g) ?? []).length, 1);
+});
+
+test("内置经典模板: 模块标题下划线必须跟随主题色（不被 undefined shorthand 抹成默认灰）", () => {
+  const sectionStyles = { skills: { fontSize: 18, color: "#1234ab", fontWeight: 700, spacing: 0, itemSpacing: 12, align: "left", border: true, hidden: false } as TemplateSectionStyle };
+  const html = (border: boolean) => renderToStaticMarkup(
+    <TemplateProvider templateId="classic" menuSections={[{ id: "skills", title: "核心技能", icon: "", enabled: true, order: 0 }]}
+      sectionStyles={{ skills: { ...sectionStyles.skills, border } }}>
+      <ClassicSectionTitle type="skills" globalSettings={{ themeColor: "#1234ab" }} />
+    </TemplateProvider>
+  );
+  // 开启边框（经典模板默认）：下划线颜色必须写出主题色，不能只靠 border-b 的默认灰
+  assert.match(html(true), /border-bottom:1px solid #1234ab/);
+  // 显式关闭：才应该没有下划线
+  assert.match(html(false), /border-bottom:none/);
 });
