@@ -1,4 +1,4 @@
-/** Codex 读取的展示规则说明与可直接提交的模板示例。 */
+/** 任意 MCP 客户端 / Agent Host 可读取的展示规则说明与可直接提交的模板示例。 */
 export const mcpTemplateGuide = {
   schemaVersion: 1,
   workflow: ["从用户截图辨认栏数、基本信息对齐、字体、字号、色彩、分隔线、模块间距和模块顺序", "先 list_templates 避免 id 冲突", "create_template 创建模板", "用户已有简历时 get_resume → apply_template(preserveOverrides=false)；否则 create_resume", "网页检查视觉效果，再 update_template 微调"],

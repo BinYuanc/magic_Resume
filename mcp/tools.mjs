@@ -16,7 +16,7 @@ export const tools = [
   tool("apply_template", "将模板应用到简历，保留内容；preserveOverrides=false 使用模板默认排版，true 保留用户排版。截图复刻模板应用时通常 false。", object({ ...revision, templateId: str, preserveOverrides: { type: "boolean", default: false } }, ["resumeId", "expectedUpdatedAt", "templateId"])),
   tool("undo_resume_change", "撤销这份简历最近一次内容/排版操作；返回恢复后的版本。", object(revision, ["resumeId", "expectedUpdatedAt"])),
   tool("list_templates", "列出内置及我的模板；返回布局、字体、颜色和 id。", object({}), true),
-  tool("get_template_schema", "根据截图创建模板之前先调用，取得支持的展示参数、示例及约束。截图由 Codex 自己解读，此工具不做图像识别。", object({}), true),
+  tool("get_template_schema", "根据截图创建模板之前先调用，取得支持的展示参数、示例及约束。截图由当前 AI / Agent Host 自己解读，此工具不做图像识别。", object({}), true),
   tool("create_template", "从截图分析得到的展示参数创建自定义模板，进入我的模板可直接使用。只保存排版，禁止姓名/联系方式/经历内容；先 get_template_schema。", object({ package: { type: "object", description: "{manifest:{schemaVersion:1,id,name,...},layout:{...},theme:{...}}，遵循 get_template_schema 返回格式。" } }, ["package"])),
   tool("update_template", "更新已有自定义模板样式，不能覆盖内置模板；需先 list_templates 取 updatedAt。", object({ templateId: str, expectedUpdatedAt: str, package: { type: "object" } }, ["templateId", "expectedUpdatedAt", "package"])),
   tool("save_resume_as_template", "将当前简历有效布局/字号/颜色/间距及正文分块保存为可复用模板，真实内容替换为示例。", object({ resumeId: str, name: str, description: { type: "string" } }, ["resumeId", "name"])),
